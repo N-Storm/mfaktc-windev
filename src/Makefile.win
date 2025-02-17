@@ -1,7 +1,7 @@
 # CUDA_DIR = "${CUDA_PATH}"
-CUDA_DIR = 'C:\Progra~1\NVIDIA~2\CUDA\v12.8\'
-CUDA_INCLUDE = 'C:\Progra~1\NVIDIA~2\CUDA\v12.8\include'
-CUDART_INCLUDE = 'C:\Progra~1\NVIDIA~2\CUDA\v12.8\include\cudart'
+CUDA_DIR = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\"
+CUDA_INCLUDE = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\include"
+CUDART_INCLUDE = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\include\cudart"
 
 CC = ./vcwrapper.sh cl
 # cmd.exe /C "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 &\ 
