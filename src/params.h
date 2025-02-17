@@ -26,7 +26,7 @@ This is just the upper LIMIT of the SIEVE_SIZE, the actual sieve size depends
 on some other factors asweel, but you don't have to worry about.
 */
 
-#define SIEVE_SIZE_LIMIT 32
+#define SIEVE_SIZE_LIMIT 512
 
 
 

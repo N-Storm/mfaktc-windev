@@ -213,7 +213,7 @@ extern "C" __host__ int tf_class_barrett92(unsigned long long int k_min, unsigne
         printf(" STREAM_SCHEDULE: started GPU kernel on stream %d using h_ktab[%d]\n\n", stream, h_ktab_inuse[stream]);
 #endif
 #ifdef DEBUG_GPU_MATH
-        cudaStreamSynchronize(stream); /* needed to get the output from device printf() */
+        cudaStreamSynchronize(mystuff->stream[stream]); /* needed to get the output from device printf() */
 #endif
 #ifdef DEBUG_STREAM_SCHEDULE_CHECK
         int j, index_count;
