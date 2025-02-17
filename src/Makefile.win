@@ -1,11 +1,8 @@
-# CUDA_DIR = "${CUDA_PATH}"
-CUDA_DIR = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\"
-CUDA_INCLUDE = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\include"
-CUDART_INCLUDE = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\include\cudart"
+CUDA_DIR = "${CUDA_PATH}"
 
 CC = ./vcwrapper.sh cl
 # cmd.exe /C "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 &\ 
-CFLAGS = /Ox /Oy /W2 /fp:fast /I$(CUDA_INCLUDE) /I$(CUDART_INCLUDE) /nologo
+CFLAGS = /Ox /Oy /W2 /fp:fast /I"$(CUDA_DIR)\include" /I"$(CUDART_DIR)\include\cudart" /nologo
 
 NVCCFLAGS = -m64 --ptxas-options=-v
 CUFLAGS = -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox $(NVCCFLAGS)
@@ -38,8 +35,8 @@ CUSRC = tf_72bit.cu tf_96bit.cu tf_barrett96.cu tf_barrett96_gs.cu gpusieve.cu
 CUOBJS = $(CUSRC:.cu=.obj) tf_75bit.obj
 COBJS  = $(CSRC:.c=.obj)
 
-# LIBS = $(CUDA_DIR)\lib\x64\cudart_static.lib
-LIBS = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\lib\x64\cudart_static.lib"
+LIBS = $(CUDA_DIR)\lib\x64\cudart_static.lib
+# LIBS = "C:\Progra~1\NVIDIA~2\CUDA\v12.8\lib\x64\cudart_static.lib"
 
 ############################################################################################################
 
