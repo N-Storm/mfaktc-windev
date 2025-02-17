@@ -25,11 +25,11 @@ jobs:
       - name: Update Makefile
         id: update_makefile
         run: |
-          echo CCMAX=120 > GITHUB_OUTPUT
+          echo CCMAX=120 > $GITHUB_OUTPUT
 
 #          choco install -y grep sed gawk
 #          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/'
-#          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/' > GITHUB_OUTPUT
+#          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/' > $GITHUB_OUTPUT
 #          cl --help
 
 #      - uses: johnnynunez/vsdevenv-shell@v2
@@ -62,6 +62,7 @@ jobs:
           SET BASE_NAME="mfaktc-${{ github.ref_name }}-win64-cuda12.8.0"
           zip -9 -j %BASE_NAME%.zip *
           echo " [%BASE_NAME%.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/%BASE_NAME%.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > %BASE_NAME%.txt
+          dir /S
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
