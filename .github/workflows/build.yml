@@ -62,7 +62,7 @@ jobs:
           SET BASE_NAME="mfaktc-${{ github.ref_name }}-win64-cuda12.8.0"
           zip -9 -j %BASE_NAME%.zip *
           echo " [%BASE_NAME%.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/%BASE_NAME%.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > %BASE_NAME%.txt
-          dir /S
+          bash -c "ls -l"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
