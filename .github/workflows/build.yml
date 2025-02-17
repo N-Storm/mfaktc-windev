@@ -56,29 +56,18 @@ jobs:
         with:
           limit-access-to-actor: true
 
-      - name: Build from sources test (PowerShell)
-        run: |
-          cd src
-          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64
-          cd "${{ github.workspace }}\src"
-          cl /Ox /Oy /W2 /fp:fast /nologo /c /Tp sieve.c
-          cl /Ox /Oy /W2 /fp:fast /nologo /c /Tp timer.c
-          dir
-          make --version
-          C:\ProgramData\chocolatey\lib\make\tools\install\bin\make -d -f Makefile.win
-          dir
-
       - name: Prepare build archive with description
         run: |
-          SET BASE_NAME="mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}"
+          choco install -y zip
+          SET BASE_NAME="mfaktc-${{ github.ref_name }}-win64-cuda12.8.0"
           zip -9 -j %BASE_NAME%.zip *
-          echo " [%BASE_NAME%.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/%BASE_NAME%.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | ${{ matrix.sys.ct_os }} | --- | --- " > %BASE_NAME%.txt
+          echo " [%BASE_NAME%.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/%BASE_NAME%.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > %BASE_NAME%.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
-          path: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}.zip
+          name: mfaktc-${{ github.ref_name }}-win64-cuda12.8.0
+          path: mfaktc-${{ github.ref_name }}-win64-cuda12.8.0.zip
 
   upload_release:
     if: startsWith(github.ref, 'refs/tags/')
