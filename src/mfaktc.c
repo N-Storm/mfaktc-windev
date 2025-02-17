@@ -1018,7 +1018,7 @@ int main(int argc, char **argv)
   }
 
   // Don't do a CPU spin loop waiting for the GPU
-  cudaSetDeviceFlags(cudaDeviceBlockingSync);
+  cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync);
 
   if(mystuff.verbosity >= 1)logprintf(&mystuff, "\nAutomatic parameters\n");
 #if CUDART_VERSION >= 2000
