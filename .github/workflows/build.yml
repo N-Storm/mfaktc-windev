@@ -15,25 +15,22 @@ jobs:
 
     steps:
 
-#      - name: Installing CUDA Toolkit
-#        id: cuda-toolkit
-#        uses: Jimver/cuda-toolkit@v0.2.21
-
-#      - name: Install MSVC++ shell
-#        uses: ilammy/msvc-dev-cmd@v1.13.0
-#        with:
-#          arch: x64
+      - name: Installing CUDA Toolkit
+        id: cuda-toolkit
+        uses: Jimver/cuda-toolkit@v0.2.21
 
       - name: Checkout repo
         uses: actions/checkout@v4
+
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v3
+#        with:
+#          limit-access-to-actor: true
 
       - name: Update Makefile
         id: update_makefile
         run: |
           echo CCMAX=120 > GITHUB_OUTPUT
-          choco install -y make
-          dir C:\ProgramData\chocolatey\lib\make\tools
-          dir C:\ProgramData\chocolatey\lib\make\tools\install\bin
 
 #          choco install -y grep sed gawk
 #          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/'

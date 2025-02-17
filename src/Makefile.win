@@ -1,6 +1,7 @@
 CUDA_DIR = "${CUDA_PATH}"
 
-CC = /c/Program\ Files/Microsoft\ Visual\ Studio/2022/Enterprise/Common7/Tools/VsDevCmd.bat -arch=amd64 &\ 
+CC = ./vcwrapper.sh cl
+# cmd.exe /C "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 &\ 
 CFLAGS = /Ox /Oy /W2 /fp:fast /I$(CUDA_DIR)\include /I$(CUDA_DIR)\include\cudart /nologo
 
 NVCCFLAGS = -m64 --ptxas-options=-v
