@@ -22,3 +22,4 @@ worktodo.add
 .vs/
 *.zip
 /*.patch
+*.cache
