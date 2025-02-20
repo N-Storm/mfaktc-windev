@@ -4,7 +4,7 @@ CUDA_INCLUDE = -I$(CUDA_DIR)/include/
 CUDA_LIB = -L$(CUDA_DIR)/lib64/
 
 # Compiler settings for .c files (CPU)
-CC = gcc
+CC = clang
 CFLAGS = -Wall -Wextra -O2 $(CUDA_INCLUDE) -malign-double
 CFLAGS_EXTRA_SIEVE = -funroll-all-loops
 

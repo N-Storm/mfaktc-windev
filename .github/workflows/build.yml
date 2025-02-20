@@ -6,6 +6,94 @@ on:
   workflow_dispatch:
 
 jobs:
+# Begin job "build-linux"
+  build-linux:
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+      fail-fast: false
+
+      matrix:
+        sys:
+          # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
+          # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
+          - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
+
+    env:
+      # We can't use GitHub direct container support on old Ubuntu versions, because actions will fail running from these due to old glibc.cancel-timeout-minutes.cancel-timeout-minutes.
+      # As a workaround, Docker containers will be launched separately, running build related actions inside the container via 'docker exec', while generic actions will run on the
+      # host runner VM itself.
+      CONTAINER: "nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}"
+
+    steps:
+
+      - name: Start Docker Container
+        run: |
+          docker pull $CONTAINER
+          docker run --name build-container -d -v ${{ github.workspace }}:/workspace $CONTAINER tail -f /dev/null
+
+      - name: Fix GPG keys for NVidia repo on Ubuntu 16.04
+        if: matrix.sys.ct_os == 'ubuntu16.04'
+        env:
+          SCRIPT: apt-key add /workspace/3bf863cc.pub
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/3bf863cc.pub
+          docker exec build-container bash -c "$SCRIPT"
+
+      - name: Update & install required packages inside the container
+        env:
+          SCRIPT: |
+            apt update
+            apt -y full-upgrade
+            apt install -y build-essential curl git make python3 sudo unzip wget zip clang
+        run: docker exec build-container bash -c "$SCRIPT"
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Update Makefile
+        id: update_makefile
+        shell: bash
+        env:
+          SCRIPT: |
+            cd /workspace
+            echo -n "Checking for nvcc maximum supported CC... "
+            export CCMAX=$(nvcc --help | grep -Eoe "compute_[0-9a]{2,3}" | cut -d '_' -f2 | sort -un | tail -n1)
+            echo $CCMAX
+            echo "CCMAX=$CCMAX" >> GITHUB_OUTPUT
+            echo "All supported CC: $(nvcc --help | grep -Eoe "compute_[0-9a]+" | cut -d '_' -f2 | sort -un | xargs)"
+
+            echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
+            sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
+        run: |
+          docker exec build-container bash -c "$SCRIPT"
+          cat GITHUB_OUTPUT > $GITHUB_OUTPUT
+          rm -f GITHUB_OUTPUT
+
+      - name: Build from sources
+        env:
+          SCRIPT: cd /workspace/src && make -j$(nproc)
+        run: docker exec build-container bash -c "$SCRIPT"
+
+      - name: Prepare zip archive with the description
+        env:
+          SCRIPT: |
+            cd /workspace
+            export BASE_NAME="mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}"
+            zip -9 -j ${BASE_NAME}.zip *
+            echo "[${BASE_NAME}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${BASE_NAME}.zip) | \
+            ${{ steps.update_makefile.outputs.CCMAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${BASE_NAME}.txt
+        run: docker exec build-container bash -c "$SCRIPT"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}
+          path: mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}.*
+# End job "build-linux"
+
+# Begin job "build-win"
   build-win:
     runs-on: windows-latest
 
@@ -69,10 +157,11 @@ jobs:
         with:
           name: mfaktc-${{ github.ref_name }}-win64-cuda12.8.0
           path: mfaktc-${{ github.ref_name }}-win64-cuda12.8.0.zip
+# End job "build-win"
 
   upload_release:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: build-win
+    needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
 
     permissions:
