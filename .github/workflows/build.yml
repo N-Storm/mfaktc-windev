@@ -52,8 +52,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Update Makefile
-        id: update_makefile
+      - name: Prepare sources and gather info
+        id: prepare
         shell: bash
         env:
           SCRIPT: |
@@ -83,7 +83,7 @@ jobs:
             export BASE_NAME="mfaktc-${{ github.ref_name }}-linux64-cuda${{ matrix.sys.cuda_version }}"
             zip -9 -j ${BASE_NAME}.zip *
             echo "[${BASE_NAME}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${BASE_NAME}.zip) | \
-            ${{ steps.update_makefile.outputs.CCMAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${BASE_NAME}.txt
+            ${{ steps.prepare.outputs.CCMAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${BASE_NAME}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Upload build artifacts
@@ -106,9 +106,10 @@ jobs:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
           - cuda_version: '12.8.0'
-          - cuda_version: '12.0.0'
-          - cuda_version: '11.0.1'
-          - cuda_version: '10.0.130'
+          - cuda_version: '12.5.0'
+          # - cuda_version: '12.0.0'
+          # - cuda_version: '11.0.1'
+          # - cuda_version: '10.0.130'
 
     env:
       base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
@@ -123,12 +124,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Update Makefile
-        id: update_makefile
+      - name: Prepare sources and gather info
+        id: prepare
         run: |
           choco install -y gawk grep sed
-          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/'
-          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/' > $GITHUB_OUTPUT
+          nvcc --help | grep -Eoe "compute_[0-9a]+"
+          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }'
+          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' > $GITHUB_OUTPUT
 
 #      - uses: johnnynunez/vsdevenv-shell@v2
 #        shell: vsdevenv x64 bash {0}
@@ -159,7 +161,7 @@ jobs:
         run: |
           choco install -y zip
           zip -9 -j "${{ env.base_name }}.zip" *
-          echo " [${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > "${{ env.base_name }}.txt"
+          echo " [${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | ${{ steps.prepare.outputs.CCMAX }} | Windows x64 | --- | --- " > "${{ env.base_name }}.txt"
           bash -c "ls -l"
 
       - name: Upload build artifacts
