@@ -101,11 +101,24 @@ jobs:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
 
-    steps:
+      matrix:
+        # Available version can be viewed at the Jimver/cuda-toolkit action sources:
+        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
+        sys:
+          - cuda_version: '12.8.0'
+          - cuda_version: '12.0.0'
+          - cuda_version: '11.0.1'
+          - cuda_version: '10.0.130'
 
+    env:
+      base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
+
+    steps:
       - name: Installing CUDA Toolkit
         id: cuda-toolkit
         uses: Jimver/cuda-toolkit@v0.2.21
+        with:
+          cuda: ${{ matrix.sys.cuda_version }}
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -113,12 +126,9 @@ jobs:
       - name: Update Makefile
         id: update_makefile
         run: |
-          echo CCMAX=120 > $GITHUB_OUTPUT
-
-#          choco install -y grep sed gawk
-#          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/'
-#          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/' > $GITHUB_OUTPUT
-#          cl --help
+          choco install -y gawk grep sed
+          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/'
+          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/' > $GITHUB_OUTPUT
 
 #      - uses: johnnynunez/vsdevenv-shell@v2
 #        shell: vsdevenv x64 bash {0}
@@ -145,18 +155,18 @@ jobs:
 #          limit-access-to-actor: true
 
       - name: Prepare build archive with description
+# Set-Variable -Name "BASE_NAME" -Value "mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}"
         run: |
           choco install -y zip
-          Set-Variable -Name "BASE_NAME" -Value "mfaktc-${{ github.ref_name }}-win64-cuda12.8.0"
-          zip -9 -j "${BASE_NAME}.zip" *
-          echo " [${BASE_NAME}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${BASE_NAME}.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > "${BASE_NAME}.txt"
+          zip -9 -j "${{ env.base_name }}.zip" *
+          echo " [${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > "${{ env.base_name }}.txt"
           bash -c "ls -l"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mfaktc-${{ github.ref_name }}-win64-cuda12.8.0
-          path: mfaktc-${{ github.ref_name }}-win64-cuda12.8.0.zip
+          name: ${{ env.base_name }}
+          path: ${{ env.base_name }}.*
 # End job "build-win"
 
   upload_release:
