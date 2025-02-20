@@ -25,11 +25,11 @@ jobs:
       - name: Update Makefile
         id: update_makefile
         run: |
-          echo CCMAX=120 > GITHUB_OUTPUT
+          echo CCMAX=120 > $GITHUB_OUTPUT
 
 #          choco install -y grep sed gawk
 #          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/'
-#          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/' > GITHUB_OUTPUT
+#          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print CC }' | sed -E 's/.*/CCMAX=\\0/' > $GITHUB_OUTPUT
 #          cl --help
 
 #      - uses: johnnynunez/vsdevenv-shell@v2
@@ -59,9 +59,10 @@ jobs:
       - name: Prepare build archive with description
         run: |
           choco install -y zip
-          SET BASE_NAME="mfaktc-${{ github.ref_name }}-win64-cuda12.8.0"
-          zip -9 -j %BASE_NAME%.zip *
-          echo " [%BASE_NAME%.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/%BASE_NAME%.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > %BASE_NAME%.txt
+          Set-Variable -Name "BASE_NAME" -Value "mfaktc-${{ github.ref_name }}-win64-cuda12.8.0"
+          zip -9 -j "${BASE_NAME}.zip" *
+          echo " [${BASE_NAME}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${BASE_NAME}.zip) | ${{ steps.update_makefile.outputs.CCMAX }} | Windows | --- | --- " > "${BASE_NAME}.txt"
+          bash -c "ls -l"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -88,9 +89,9 @@ jobs:
           echo -e "Binary releases (automated builds) below. Max CC in the table means maximum supported compute capability version without dot (i.e. 90 reads as 9.0).\n" > RELEASE_NOTES.txt
           echo "Filename | Max CC | Build OS | GCC version | NVCC version" >> RELEASE_NOTES.txt
           echo "--- | --- | --- | --- | ---" >> RELEASE_NOTES.txt
-          cat mfaktc-${{ github.ref_name }}-linux64-cuda*/mfaktc-${{ github.ref_name }}-linux64-cuda*.txt | sort -Vr >> RELEASE_NOTES.txt
+          cat mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.txt | sort -Vr >> RELEASE_NOTES.txt
           echo 'RELEASE_FILES<<EOF' > $GITHUB_OUTPUT
-          ls -1 mfaktc-${{ github.ref_name }}-linux64-cuda*/mfaktc-${{ github.ref_name }}-linux64-cuda*.zip | sort -Vr >> $GITHUB_OUTPUT
+          ls -1 mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.zip | sort -Vr >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
       - name: Make and upload release
