@@ -1,8 +1,12 @@
 CUDA_DIR = "${CUDA_PATH}"
+CUDA_INCLUDE = "${CUDA_PATH}\include"
+CUDART_INCLUDE = "${CUDA_PATH}\include\cudart"
+
 
 CC = ./vcwrapper.sh cl
 # cmd.exe /C "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 &\ 
-CFLAGS = /Ox /Oy /W2 /fp:fast /I"$(CUDA_DIR)\include" /I"$(CUDART_DIR)\include\cudart" /nologo
+# CFLAGS = /Ox /Oy /W2 /fp:fast /I"$(CUDA_DIR)'\include'" /I"$(CUDA_DIR)'\include\cudart'" /nologo
+CFLAGS = /Ox /Oy /W2 /fp:fast /I"$(CUDA_INCLUDE)" /I"$(CUDART_INCLUDE)" /nologo
 
 NVCCFLAGS = -m64 --ptxas-options=-v
 CUFLAGS = -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox $(NVCCFLAGS)
