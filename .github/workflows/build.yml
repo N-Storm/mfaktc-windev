@@ -138,11 +138,11 @@ jobs:
 #          make -f Makefile.win
 #          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 & nvcc -O2 -c tf_96bit.cu -o tf_96bit.obj -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox -m64 --ptxas-options=-v -arch=all -O3 -DSHORTCUT_75BIT
 
-#      - name: Setup tmate session
-#        if: ${{ failure() }}
-#        uses: mxschmitt/action-tmate@v3
-#        with:
-#          limit-access-to-actor: true
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
       - name: Prepare build archive with description
         run: |
