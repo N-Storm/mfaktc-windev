@@ -128,11 +128,17 @@ jobs:
         id: prepare
         run: |
           choco install -y --no-progress gawk grep sed
-          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\1/g'
-          bash -c 'echo "All supported CC: $(nvcc --help | grep -Eoe "compute_[0-9a]+" | cut -d "_" -f2 | /usr/bin/sort -un | xargs)"'
-          nvcc --help | grep -Eoe "compute_[0-9]+" | sed -E 's/compute_([0-9]+)/\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }'
-          bash -c "nvcc --help | grep -Eoe 'compute_[0-9]+' | cut -d '_' -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print \"CCMAX=\" CC }'"
-          nvcc --help | grep -Eoe "compute_[0-9]+" | sed -E 's/compute_([0-9]+)/\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' > $GITHUB_OUTPUT
+#          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
+          bash -c 'echo \"All supported CC: $(nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9a]+\" | cut -d \"_\" -f2 | /usr/bin/sort -un | xargs)\"'
+          nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print \"CCMAX=\" CC }'
+          nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print \"CCMAX=\" CC }' | bash -c 'tee $GITHUB_OUTPUT'
+          cp .github/workflows/scripts/vcwrapper.sh ./src
+          bash .github/workflows/scripts/patch_makefile.sh
+#          echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
+#          sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
+#          bash -c 'nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9]+\" | cut -d \"_\" -f2 | /usr/bin/sort -un | xargs -i bash -c \"sed -i \\\"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\\\" src/Makefile.win\"'
+#          echo "Patching Makefile.win to support build..."
+#          sed -i -e 's/^CC = cl/CC = .\/vcwrapper.sh cl/' -e 's/^LINK = link/LINK = .\/vcwrapper.sh link/' -E -e 's/(.*?)nvcc (.*)/\1.\/vcwrapper.sh \"nvcc \2\"/' src/Makefile.win
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
@@ -146,11 +152,6 @@ jobs:
         shell: cmd
         run: |
           cd src && make -d -f Makefile.win
-#          cl /Ox /Oy /W2 /fp:fast /nologo /c /Tp sieve.c
-#          cl /Ox /Oy /W2 /fp:fast /nologo /c /Tp timer.c
-#          make -d -f Makefile.win sieve.obj
-#          dir
-
 #          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 & 
 #          choco install -y make
 #          & nvcc -O2 -c tf_96bit.cu -o tf_96bit.obj -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox -m64 --ptxas-options=-v -arch=all -O3 -DSHORTCUT_75BIT
