@@ -142,12 +142,14 @@ jobs:
 
       - name: Dump some info
         run: |
+          nvcc --list-gpu-arch
+          nvcc --help
           Install-Module VSSetup -Scope CurrentUser
           Get-VSSetupInstance
           vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
         continue-on-error: true
 
-      - name:
+      - name: Adding flag to allow unsupported compiler
         if: startsWith(matrix.sys.cuda_version, '11') || startsWith(matrix.sys.cuda_version, '12')
         run: |
           sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
@@ -156,11 +158,12 @@ jobs:
       - name: Build from sources
         shell: powershell
         run: |
-          & '${{ env.vsdevshell }}' -Arch amd64 -HostArch amd64
+          & '${{ env.vsdevshell }}' ${{ env.vsdevshellopts }}
           cd "${{ github.workspace }}\src"
           make SHELL="powershell.exe" -d -f Makefile.win
         env:
           vsdevshell: ${{ matrix.sys.os == 'windows-2022' && 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' || 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' }}
+          vsdevshellopts: ${{ matrix.sys.os == 'windows-2022' && '-Arch amd64 -HostArch amd64' || '' }}
 
 #      - name: Setup tmate session
 #        if: ${{ failure() }}
