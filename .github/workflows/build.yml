@@ -95,7 +95,7 @@ jobs:
 
 # Begin job "build-win"
   build-win:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.sys.os }}
 
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
@@ -105,15 +105,17 @@ jobs:
         # Available version can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
-          - cuda_version: '12.8.0'
-          - cuda_version: '12.5.0'
-          - cuda_version: '12.3.2'
-          - cuda_version: '12.0.0'
-          - cuda_version: '11.8.0'
-          - cuda_version: '11.0.1'
-          - cuda_version: '10.0.130'
-          - cuda_version: '9.2.148'
-          - cuda_version: '8.0.61'
+          - { cuda_version: '12.8.0', os: 'windows-2022' }
+          - { cuda_version: '12.4.1', os: 'windows-2022' }
+          - { cuda_version: '12.3.2', os: 'windows-2019' }
+          - { cuda_version: '12.0.1', os: 'windows-2022' }
+          - { cuda_version: '12.0.1', os: 'windows-2019' }
+          - { cuda_version: '11.8.0', os: 'windows-2022' }
+          - { cuda_version: '11.8.0', os: 'windows-2019' }
+          - { cuda_version: '11.0.1', os: 'windows-2019' }
+          - { cuda_version: '10.0.130', os: 'windows-2019' }
+          - { cuda_version: '9.2.148', os: 'windows-2019' }
+          - { cuda_version: '8.0.61', os: 'windows-2019' }
 
     env:
       base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
@@ -133,19 +135,32 @@ jobs:
         run: |
           choco install -y --no-progress gawk grep sed
           bash -c 'echo "All supported CC: $(nvcc --list-gpu-arch | grep -Eoe "compute_[0-9a]+" | cut -d "_" -f2 | /usr/bin/sort -un | xargs)"'
-          nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }'
           nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' | bash -c 'tee $GITHUB_OUTPUT'
           echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
           sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
-          bash -c 'nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9]+\" | cut -d \"_\" -f2 | /usr/bin/sort -un | xargs -i bash -c \"sed -i \\\"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\\\" src/Makefile.win\"'
-          sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler' src/Makefile.win
+          bash -c 'nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9]+\" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c \"sed -i \\\"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\\\" src/Makefile.win\"'
 
-      - name: Build from sources test
+      - name: Dump some info
+        run: |
+          Install-Module VSSetup -Scope CurrentUser
+          Get-VSSetupInstance
+          vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        continue-on-error: true
+
+      - name:
+        if: startsWith(matrix.sys.cuda_version, '11') || startsWith(matrix.sys.cuda_version, '12')
+        run: |
+          sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
+        continue-on-error: true
+
+      - name: Build from sources
         shell: powershell
         run: |
-          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
+          & '${{ env.vsdevshell }}' -Arch amd64 -HostArch amd64
           cd "${{ github.workspace }}\src"
           make SHELL="powershell.exe" -d -f Makefile.win
+        env:
+          vsdevshell: ${{ matrix.sys.os == 'windows-2022' && 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' || 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' }}
 
 #      - name: Setup tmate session
 #        if: ${{ failure() }}
