@@ -128,29 +128,16 @@ jobs:
         id: prepare
         run: |
           choco install -y --no-progress gawk grep sed
-#          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
           bash -c 'echo \"All supported CC: $(nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9a]+\" | cut -d \"_\" -f2 | /usr/bin/sort -un | xargs)\"'
           nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print \"CCMAX=\" CC }'
           nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print \"CCMAX=\" CC }' | bash -c 'tee $GITHUB_OUTPUT'
-
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v3
-#        with:
-#          limit-access-to-actor: true
-
-#      - uses: johnnynunez/vsdevenv-shell@v2
-#        shell: vsdevenv x64 bash {0}
 
       - name: Build from sources test
         shell: cmd
         run: |
           & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
-          cd D: && cd src && make SHELL="powershell.exe" -d -f Makefile.win
-#          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 & 
-#          choco install -y make
-#          & nvcc -O2 -c tf_96bit.cu -o tf_96bit.obj -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox -m64 --ptxas-options=-v -arch=all -O3 -DSHORTCUT_75BIT
-#          make -f Makefile.win
-#          "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=amd64 & nvcc -O2 -c tf_96bit.cu -o tf_96bit.obj -DWIN64 -Xcompiler /EHsc,/W3,/nologo,/Ox -m64 --ptxas-options=-v -arch=all -O3 -DSHORTCUT_75BIT
+          cd "${{ github.workspace }}"
+          make SHELL="powershell.exe" -d -f Makefile.win
 
 #      - name: Setup tmate session
 #        if: ${{ failure() }}
@@ -159,7 +146,6 @@ jobs:
 #          limit-access-to-actor: true
 
       - name: Prepare build archive with description
-# Set-Variable -Name "BASE_NAME" -Value "mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}"
         run: |
           choco install -y zip
           zip -9 -j "${{ env.base_name }}.zip" *
