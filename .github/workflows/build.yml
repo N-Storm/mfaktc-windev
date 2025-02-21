@@ -140,10 +140,10 @@ jobs:
 #          echo "Patching Makefile.win to support build..."
 #          sed -i -e 's/^CC = cl/CC = .\/vcwrapper.sh cl/' -e 's/^LINK = link/LINK = .\/vcwrapper.sh link/' -E -e 's/(.*?)nvcc (.*)/\1.\/vcwrapper.sh \"nvcc \2\"/' src/Makefile.win
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
+#      - name: Setup tmate session
+#        uses: mxschmitt/action-tmate@v3
+#        with:
+#          limit-access-to-actor: true
 
 #      - uses: johnnynunez/vsdevenv-shell@v2
 #        shell: vsdevenv x64 bash {0}
