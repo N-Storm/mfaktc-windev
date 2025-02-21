@@ -128,9 +128,10 @@ jobs:
         id: prepare
         run: |
           choco install -y gawk grep sed
-          nvcc --help | grep -Eoe "compute_[0-9a]+"
-          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }'
-          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' > $GITHUB_OUTPUT
+          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9a]+)/\\1/g'
+          bash -c 'echo "All supported CC: $(nvcc --help | grep -Eoe "compute_[0-9a]+" | cut -d "_" -f2 | /usr/bin/sort -un | xargs)"'
+          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }'
+          nvcc --help | grep -Eoe "compute_[0-9a]+" | sed -E 's/compute_([0-9]+)/\\1/g' | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' > $GITHUB_OUTPUT
 
 #      - uses: johnnynunez/vsdevenv-shell@v2
 #        shell: vsdevenv x64 bash {0}
