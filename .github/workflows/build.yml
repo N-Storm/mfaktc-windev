@@ -131,6 +131,9 @@ jobs:
           bash -c 'echo \"All supported CC: $(nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9a]+\" | cut -d \"_\" -f2 | /usr/bin/sort -un | xargs)\"'
           nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print \"CCMAX=\" CC }'
           nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print \"CCMAX=\" CC }' | bash -c 'tee $GITHUB_OUTPUT'
+          echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
+          sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
+          bash -c 'nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9]+\" | cut -d \"_\" -f2 | /usr/bin/sort -un | xargs -i bash -c \"sed -i \\\"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\\\" src/Makefile.win\"'
 
       - name: Build from sources test
         shell: cmd
