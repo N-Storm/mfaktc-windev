@@ -105,17 +105,16 @@ jobs:
         # Available version can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
-          - { cuda_version: '12.8.0', os: 'windows-2022' }
-          - { cuda_version: '12.4.1', os: 'windows-2022' }
-          - { cuda_version: '12.3.2', os: 'windows-2019' }
-          - { cuda_version: '12.0.1', os: 'windows-2022' }
-          - { cuda_version: '12.0.1', os: 'windows-2019' }
-          - { cuda_version: '11.8.0', os: 'windows-2022' }
-          - { cuda_version: '11.8.0', os: 'windows-2019' }
-          - { cuda_version: '11.0.1', os: 'windows-2019' }
+#          - { cuda_version: '12.8.0', os: 'windows-2022' }
+#          - { cuda_version: '12.4.1', os: 'windows-2022' }
+#          - { cuda_version: '12.3.2', os: 'windows-2022' }
+#          - { cuda_version: '12.0.1', os: 'windows-2022' }
+#          - { cuda_version: '11.8.0', os: 'windows-2022' }
+          - { cuda_version: '11.5.2', os: 'windows-2022' }
+          - { cuda_version: '11.0.1', os: 'windows-2022' }
           - { cuda_version: '10.0.130', os: 'windows-2019' }
           - { cuda_version: '9.2.148', os: 'windows-2019' }
-          - { cuda_version: '8.0.61', os: 'windows-2019' }
+#          - { cuda_version: '8.0.61', os: 'windows-2019' }
 
     env:
       base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
@@ -165,11 +164,11 @@ jobs:
           vsdevshell: ${{ matrix.sys.os == 'windows-2022' && 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' || 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' }}
           vsdevshellopts: ${{ matrix.sys.os == 'windows-2022' && '-Arch amd64 -HostArch amd64' || '' }}
 
-#      - name: Setup tmate session
-#        if: ${{ failure() }}
-#        uses: mxschmitt/action-tmate@v3
-#        with:
-#          limit-access-to-actor: true
+      - name: Setup tmate session
+        if: ${{ failure() }} && ${{ matrix.sys.os == 'windows-2019' }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
       - name: Prepare build archive with description
         run: |
