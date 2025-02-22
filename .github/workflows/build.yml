@@ -119,8 +119,8 @@ jobs:
           - { cuda_version: '11.5.2', os: 'windows-2022' }
           - { cuda_version: '11.4.4', os: 'windows-2022' }
           - { cuda_version: '11.3.1', os: 'windows-2022' }
-          - { cuda_version: '11.2.2', os: 'windows-2022' }
-          - { cuda_version: '11.1.1', os: 'windows-2022' }
+#          - { cuda_version: '11.2.2', os: 'windows-2022' }
+#          - { cuda_version: '11.1.1', os: 'windows-2022' }
 #          - { cuda_version: '11.0.1', os: 'windows-2022' }
 #          - { cuda_version: '10.0.130', os: 'windows-2019' }
 #          - { cuda_version: '9.2.148', os: 'windows-2019' }
