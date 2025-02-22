@@ -95,8 +95,8 @@ jobs:
             echo "CCMAX=$CCMAX" >> GITHUB_OUTPUT
             echo "All supported CC: $(nvcc --help | grep -Eoe "compute_[0-9a]+" | cut -d '_' -f2 | sort -un | xargs)"
             echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
-            sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
-            nvcc --help | grep -Eoe 'compute_[0-9]+' | cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile.win"
+            sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile
+            nvcc --help | grep -Eoe 'compute_[0-9]+' | cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"
             echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
             sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
         run: |
@@ -182,13 +182,13 @@ jobs:
           nvcc --help | bash -c "grep -Eoe 'compute_[0-9a]+' | cut -d _ -f2 | /usr/bin/sort -un | xargs"
           nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' | bash -c 'tee $GITHUB_OUTPUT'
           echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
-          sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile
-          bash -c 'nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"'
+          sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
+          bash -c 'nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9]+\" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c \"sed -i \\\"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\\\" src/Makefile.win\"'
 
       - name: Dump some info
         run: |
-          Install-Module VSSetup -Scope CurrentUser
           Get-VSSetupInstance
+          vswhere
           vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
         continue-on-error: true
 
