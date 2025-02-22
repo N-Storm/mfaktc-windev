@@ -19,6 +19,36 @@ jobs:
           # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
           - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
+          - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.6.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.5.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.5.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.4.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.4.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.3.2', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.3.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.3.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.2.2', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.2.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.1.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.1.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.0.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '12.0.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.8.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.7.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.6.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.6.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.5.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.4.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.3.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.2.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.1.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '10.2', ct_os: 'ubuntu18.04' }
+          - { cuda_version: '9.2', ct_os: 'ubuntu18.04' }
+          - { cuda_version: '8.0', ct_os: 'ubuntu16.04' }
 
     env:
       # We can't use GitHub direct container support on old Ubuntu versions, because actions will fail running from these due to old glibc.cancel-timeout-minutes.cancel-timeout-minutes.
@@ -47,7 +77,7 @@ jobs:
           SCRIPT: |
             apt update
             apt -y full-upgrade
-            apt install -y build-essential curl git make python3 sudo unzip wget zip clang
+            apt install -y build-essential curl git make python3 sudo unzip wget zip
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Checkout repo
@@ -60,11 +90,13 @@ jobs:
           SCRIPT: |
             cd /workspace
             echo -n "Checking for nvcc maximum supported CC... "
-            export CCMAX=$(nvcc --help | grep -Eoe "compute_[0-9a]{2,3}" | cut -d '_' -f2 | sort -un | tail -n1)
+            export CCMAX=$(nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | sort -un | tail -n1)
             echo $CCMAX
             echo "CCMAX=$CCMAX" >> GITHUB_OUTPUT
             echo "All supported CC: $(nvcc --help | grep -Eoe "compute_[0-9a]+" | cut -d '_' -f2 | sort -un | xargs)"
-
+            echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
+            sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
+            nvcc --help | grep -Eoe 'compute_[0-9]+' | cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile.win"
             echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
             sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
         run: |
@@ -119,9 +151,9 @@ jobs:
           - { cuda_version: '11.5.2', os: 'windows-2022' }
           - { cuda_version: '11.4.4', os: 'windows-2022' }
           - { cuda_version: '11.3.1', os: 'windows-2022' }
-#          - { cuda_version: '11.2.2', os: 'windows-2022' }
-#          - { cuda_version: '11.1.1', os: 'windows-2022' }
-#          - { cuda_version: '11.0.1', os: 'windows-2022' }
+          - { cuda_version: '11.2.2', os: 'windows-2019' }
+          - { cuda_version: '11.1.1', os: 'windows-2019' }
+          - { cuda_version: '11.0.1', os: 'windows-2019' }
 #          - { cuda_version: '10.0.130', os: 'windows-2019' }
 #          - { cuda_version: '9.2.148', os: 'windows-2019' }
 #          - { cuda_version: '8.0.61', os: 'windows-2019' }
@@ -135,24 +167,26 @@ jobs:
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
           cuda: ${{ matrix.sys.cuda_version }}
+          sub-packages: ${{ ( startsWith(matrix.sys.cuda, '12.') || startsWith(matrix.sys.cuda, '11.') || startsWith(matrix.sys.cuda, '10.') ||
+                          startsWith(matrix.sys.cuda, '9.') ) && '[ "nvcc", "visual_studio_integration", "cudart" ]' || '[]' }}
 
       - name: Checkout repo
         uses: actions/checkout@v4
 
+        # bash -c 'echo "All supported CC: $(nvcc --list-gpu-arch | grep -Eoe "compute_[0-9a]+" | cut -d "_" -f2 | /usr/bin/sort -un | xargs)"' # works only with newer NVCC
       - name: Prepare sources and gather info
         id: prepare
         run: |
           choco install -y --no-progress gawk grep sed
-          bash -c 'echo "All supported CC: $(nvcc --list-gpu-arch | grep -Eoe "compute_[0-9a]+" | cut -d "_" -f2 | /usr/bin/sort -un | xargs)"'
-          nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' | bash -c 'tee $GITHUB_OUTPUT'
+          bash -c "echo -n 'All supported CCs: '"
+          nvcc --help | bash -c "grep -Eoe 'compute_[0-9a]+' | cut -d _ -f2 | /usr/bin/sort -un | xargs"
+          nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' | bash -c 'tee $GITHUB_OUTPUT'
           echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
-          sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
-          bash -c 'nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9]+\" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c \"sed -i \\\"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\\\" src/Makefile.win\"'
+          sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile
+          bash -c 'nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"'
 
       - name: Dump some info
         run: |
-          nvcc --list-gpu-arch
-          nvcc --help
           Install-Module VSSetup -Scope CurrentUser
           Get-VSSetupInstance
           vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
@@ -164,18 +198,29 @@ jobs:
           sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
         continue-on-error: true
 
-      - name: Build from sources
+      # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
+      - name: Build from sources (PowerShell with MSVC 2022)
+        if: ${{ matrix.sys.os == 'windows-2022' }}
         shell: powershell
         run: |
           & '${{ env.vsdevshell }}' ${{ env.vsdevshellopts }}
           cd "${{ github.workspace }}\src"
-          make SHELL="powershell.exe" -d -f Makefile.win
+          make SHELL="powershell.exe" -f Makefile.win
         env:
           vsdevshell: ${{ matrix.sys.os == 'windows-2022' && 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' || 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' }}
           vsdevshellopts: ${{ matrix.sys.os == 'windows-2022' && '-Arch amd64 -HostArch amd64' || '' }}
 
+      # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
+      # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
+      # quotes when invoked from Make.
+      - name: Build from sources (cmd.exe with MSVC 2019)
+        if: ${{ matrix.sys.os == 'windows-2019' }}
+        shell: cmd
+        run: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" & cd src & make SHELL="powershell.exe" -f Makefile.win
+
 #      - name: Setup tmate session
-#        if: ${{ failure() }} && ${{ matrix.sys.os == 'windows-2019' }}
+#        if: ${{ failure() }}
 #        uses: mxschmitt/action-tmate@v3
 #        with:
 #          limit-access-to-actor: true
@@ -194,7 +239,8 @@ jobs:
           path: ${{ env.base_name }}.*
 # End job "build-win"
 
-  upload_release:
+# Begin job "upload-release"
+  upload-release:
     if: startsWith(github.ref, 'refs/tags/')
     needs: [ build-linux, build-win ]
     runs-on: ubuntu-latest
@@ -228,3 +274,4 @@ jobs:
           generate_release_notes: true
           body_path: RELEASE_NOTES.txt
           make_latest: true
+# End job "upload-release"
