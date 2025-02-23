@@ -19,6 +19,14 @@ jobs:
           # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
           - { cuda_version: '11.8.0', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.7.1', ct_os: 'ubuntu22.04' }
+          - { cuda_version: '11.6.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.6.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.5.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.4.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.3.1', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.2.2', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.1.1', ct_os: 'ubuntu20.04' }
           - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
 
     env:
@@ -44,12 +52,18 @@ jobs:
           docker exec build-container bash -c "$SCRIPT"
 
       - name: Update & install required packages inside the container
+        id: packages
         env:
           SCRIPT: |
             apt update
             apt -y full-upgrade
             apt install -y build-essential curl git make python3 sudo unzip wget zip
-        run: docker exec build-container bash -c "$SCRIPT"
+            echo ${{ matrix.sys.cuda_version }} | sed -E 's/([0-9]+)\.([0-9]+)\.([0-9]+)/CUDA_VER_MAJOR=\1\nCUDA_VER_MINOR=\2/' > /workspace/GITHUB_OUTPUT
+        run: |
+          docker exec build-container bash -c "$SCRIPT"
+          cat GITHUB_OUTPUT >> $GITHUB_OUTPUT
+          rm -f GITHUB_OUTPUT
+
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -61,18 +75,18 @@ jobs:
           SCRIPT: |
             cd /workspace
             echo -n "Checking for nvcc maximum supported CC... "
-            export CCMAX=$( ${{ (startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | sort -un | tail -n1)
+            export CCMAX=$( ${{ (steps.packages.outputs.CUDA_VER_MAJOR < 11 || startsWith(matrix.sys.cuda_version, '11.0')) && 'nvcc --help' || 'nvcc --list-gpu-arch' }} | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | sort -un | tail -n1)
             echo $CCMAX
-            echo "CCMAX=$CCMAX" >> GITHUB_OUTPUT
-            echo "All supported CC: $( ${{ (startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe "compute_[0-9a]+" | cut -d '_' -f2 | sort -un | xargs)"
+            echo "CCMAX=$CCMAX" >> /workspace/GITHUB_OUTPUT
+            echo "All supported CC: $( ${{ (steps.packages.outputs.CUDA_VER_MAJOR < 11 || startsWith(matrix.sys.cuda_version, '11.0')) && 'nvcc --help' || 'nvcc --list-gpu-arch' }} | grep -Eoe "compute_[0-9a]+" | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d '_' -f2 | sort -un | xargs)"
             echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
             sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile
-            ${{ (startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe 'compute_[0-9]+' | cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"
+            ${{ (steps.packages.outputs.CUDA_VER_MAJOR < 11 || startsWith(matrix.sys.cuda_version, '11.0')) && 'nvcc --help' || 'nvcc --list-gpu-arch' }} | grep -Eoe 'compute_[0-9]+' | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"
             echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
             sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
         run: |
           docker exec build-container bash -c "$SCRIPT"
-          cat GITHUB_OUTPUT > $GITHUB_OUTPUT
+          cat GITHUB_OUTPUT >> $GITHUB_OUTPUT
           rm -f GITHUB_OUTPUT
 
       - name: Build from sources
@@ -104,7 +118,6 @@ jobs:
 
 # Begin job "build-win"
   build-win:
-    if: false
     runs-on: ${{ matrix.sys.os }}
 
     strategy:
@@ -157,11 +170,11 @@ jobs:
         run: |
           choco install -y --no-progress gawk grep sed
           bash -c "echo -n 'All supported CCs: '"
-          nvcc --help | bash -c "grep -Eoe 'compute_[0-9a]+' | cut -d _ -f2 | /usr/bin/sort -un | xargs"
+          nvcc --help | bash -c "grep -Eoe 'compute_[0-9a]+' | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d _ -f2 | /usr/bin/sort -un | xargs"
           nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' | bash -c 'tee $GITHUB_OUTPUT'
           echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
           sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
-          bash -c 'nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c "sed -i \"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile.win"'
+          bash -c '${{ (startsWith(matrix.sys.cuda_version, '12.') || (startsWith(matrix.sys.cuda_version, '11.') && ! startsWith(matrix.sys.cuda_version, '11.0'))) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe "compute_[0-9]+" | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c "sed -i \"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile.win"'
 
       - name: Dump some info
         run: |
