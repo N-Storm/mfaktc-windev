@@ -19,7 +19,7 @@ jobs:
           # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
           - { cuda_version: '11.8.0', ct_os: 'ubuntu22.04' }
-#          - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
+          - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
 
     env:
       # We can't use GitHub direct container support on old Ubuntu versions, because actions will fail running from these due to old glibc.cancel-timeout-minutes.cancel-timeout-minutes.
@@ -61,13 +61,13 @@ jobs:
           SCRIPT: |
             cd /workspace
             echo -n "Checking for nvcc maximum supported CC... "
-            export CCMAX=$(nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | sort -un | tail -n1)
+            export CCMAX=$( ${{ (startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | sort -un | tail -n1)
             echo $CCMAX
             echo "CCMAX=$CCMAX" >> GITHUB_OUTPUT
-            echo "All supported CC: $(nvcc --help | grep -Eoe "compute_[0-9a]+" | cut -d '_' -f2 | sort -un | xargs)"
+            echo "All supported CC: $( ${{ (startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe "compute_[0-9a]+" | cut -d '_' -f2 | sort -un | xargs)"
             echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
             sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile
-            nvcc --help | grep -Eoe 'compute_[0-9]+' | cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"
+            ${{ (startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe 'compute_[0-9]+' | cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"
             echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
             sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
         run: |
@@ -161,7 +161,7 @@ jobs:
           nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' | bash -c 'tee $GITHUB_OUTPUT'
           echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
           sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
-          bash -c 'nvcc --list-gpu-arch | grep -Eoe \"compute_[0-9]+\" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c \"sed -i \\\"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\\\" src/Makefile.win\"'
+          bash -c 'nvcc --list-gpu-arch | grep -Eoe "compute_[0-9]+" | cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c "sed -i \"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile.win"'
 
       - name: Dump some info
         run: |
@@ -171,7 +171,7 @@ jobs:
         continue-on-error: true
 
       - name: Adding flag to allow unsupported compiler
-        if: startsWith(matrix.sys.cuda_version, '11') || startsWith(matrix.sys.cuda_version, '12')
+        if: startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')
         run: |
           sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
         continue-on-error: true
