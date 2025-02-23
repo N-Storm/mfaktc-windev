@@ -79,7 +79,7 @@ jobs:
             apt update
             apt -y full-upgrade
             apt install -y build-essential curl git make python3 sudo unzip wget zip
-            echo ${{ matrix.sys.cuda_version }} | sed -E 's/([0-9]+)\.([0-9]+)\.([0-9]+)/CUDA_VER_MAJOR=\1\nCUDA_VER_MINOR=\2/' > /workspace/GITHUB_OUTPUT
+            echo ${{ matrix.sys.cuda_version }} | sed -E 's/^([0-9]+)\.([0-9]+)/CUDA_VER_MAJOR=\1\nCUDA_VER_MINOR=\2/' > /workspace/GITHUB_OUTPUT
         run: |
           docker exec build-container bash -c "$SCRIPT"
           cat GITHUB_OUTPUT >> $GITHUB_OUTPUT
