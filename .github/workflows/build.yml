@@ -112,7 +112,8 @@ jobs:
             cd /workspace
             zip -9 -j ${{ env.base_name }}.zip *
             echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
-            ${{ steps.prepare.outputs.CC_MIN }} - ${{ steps.prepare.outputs.CC_MAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${{ env.base_name }}.txt
+            ${{ steps.prepare.outputs.CC_MIN }} - ${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+            ${{ steps.prepare.outputs.CC_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Upload build artifacts
@@ -201,10 +202,13 @@ jobs:
 #          limit-access-to-actor: true
 
       - name: Prepare build archive with description
+        shell: bash
         run: |
-          choco install -y zip
+          [[ -x "$(which zip)" ]] && pacman -S --noconfirm zip
           zip -9 -j "${{ env.base_name }}.zip" *
-          echo " [${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | ${{ steps.prepare.outputs.CCMAX }} | Windows x64 | --- | --- " > "${{ env.base_name }}.txt"
+          echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+          ${{ steps.prepare.outputs.CC_MIN }} - ${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+          ${{ steps.prepare.outputs.CC_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
