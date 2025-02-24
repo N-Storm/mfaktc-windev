@@ -79,11 +79,7 @@ jobs:
             apt update
             apt -y full-upgrade
             apt install -y build-essential curl git make python3 sudo unzip wget zip
-            echo ${{ matrix.sys.cuda_version }} | sed -E 's/^([0-9]+)\.([0-9]+)(\..*)?$/CUDA_VER_MAJOR=\1\nCUDA_VER_MINOR=\2/' > /workspace/GITHUB_OUTPUT
-        run: |
-          docker exec build-container bash -c "$SCRIPT"
-          cat GITHUB_OUTPUT >> $GITHUB_OUTPUT
-          rm -f GITHUB_OUTPUT
+        run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -94,20 +90,10 @@ jobs:
         env:
           SCRIPT: |
             cd /workspace
-            echo -n "Checking for nvcc maximum supported CC... "
-            export CCMAX=$( ${{ (steps.packages.outputs.CUDA_VER_MAJOR < 11 || startsWith(matrix.sys.cuda_version, '11.0')) && 'nvcc --help' || 'nvcc --list-gpu-arch' }} | grep -Eoe "compute_[0-9]+" | cut -d '_' -f2 | sort -un | tail -n1)
-            echo $CCMAX
-            echo "CCMAX=$CCMAX" >> /workspace/GITHUB_OUTPUT
-            echo "All supported CC: $( ${{ (steps.packages.outputs.CUDA_VER_MAJOR < 11 || startsWith(matrix.sys.cuda_version, '11.0')) && 'nvcc --help' || 'nvcc --list-gpu-arch' }} | grep -Eoe "compute_[0-9a]+" | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d '_' -f2 | sort -un | xargs)"
-            echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
-            sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile
-            ${{ (steps.packages.outputs.CUDA_VER_MAJOR < 11 || startsWith(matrix.sys.cuda_version, '11.0')) && 'nvcc --help' || 'nvcc --list-gpu-arch' }} | grep -Eoe 'compute_[0-9]+' | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d '_' -f2 | sort -un | xargs -i bash -c "sed -i \"/^NVCCFLAGS = .*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile"
-            echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
-            sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
+            bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
         run: |
           docker exec build-container bash -c "$SCRIPT"
-          cat GITHUB_OUTPUT >> $GITHUB_OUTPUT
-          rm -f GITHUB_OUTPUT
+          cat .github/workflows/scripts/gather_info.sh.out >> $GITHUB_OUTPUT
 
       - name: Build from sources
         env:
@@ -126,7 +112,7 @@ jobs:
             cd /workspace
             zip -9 -j ${{ env.base_name }}.zip *
             echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
-            ${{ steps.prepare.outputs.CCMAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${{ env.base_name }}.txt
+            ${{ steps.prepare.outputs.CC_MIN }} - ${{ steps.prepare.outputs.CC_MAX }} | ${{ matrix.sys.ct_os }} | $(gcc --version | head -n1) | $(nvcc --version | tail -n1)" > ${{ env.base_name }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Upload build artifacts
@@ -184,43 +170,22 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-        # bash -c 'echo "All supported CC: $(nvcc --list-gpu-arch | grep -Eoe "compute_[0-9a]+" | cut -d "_" -f2 | /usr/bin/sort -un | xargs)"' # works only with newer NVCC
+        # choco install -y --no-progress gawk grep sed
       - name: Prepare sources and gather info
         id: prepare
+        shell: bash
         run: |
-          choco install -y --no-progress gawk grep sed
-          bash -c "echo -n 'All supported CCs: '"
-          nvcc --help | bash -c "grep -Eoe 'compute_[0-9a]+' | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d _ -f2 | /usr/bin/sort -un | xargs"
-          nvcc --help | grep -Eoe "compute_[0-9]+" | cut -d "_" -f2 | awk 'BEGIN { CC=0 }{ if (CC < 0+$1) CC=0+$1 }END{ print "CCMAX=" CC }' | bash -c 'tee $GITHUB_OUTPUT'
-          echo "Removing CC arch entries from the Makefile.win and adding all, which current nvcc claims to support..."
-          sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win
-          bash -c '${{ (startsWith(matrix.sys.cuda_version, '12.') || (startsWith(matrix.sys.cuda_version, '11.') && ! startsWith(matrix.sys.cuda_version, '11.0'))) && 'nvcc --list-gpu-arch' || 'nvcc --help' }} | grep -Eoe "compute_[0-9]+" | ${{ startsWith(matrix.sys.cuda_version, '11.0') && 'grep -vE "compute_3[0-4]" |' || '' }} cut -d _ -f2 | /usr/bin/sort -un | xargs -i bash -c "sed -i \"/^CUFLAGS = -DWIN64.*$/a NVCCFLAGS += --generate-code arch=compute_{},code=sm_{}\" src/Makefile.win"'
-
-      - name: Dump some info
-        run: |
-          Get-VSSetupInstance
-          vswhere
-          vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-        continue-on-error: true
-
-      #  These flags are supported by CUDA version >=11
-      - name: Adding flags to allow unsupported compiler
-        if: startsWith(matrix.sys.cuda_version, '11.') || startsWith(matrix.sys.cuda_version, '12.')
-        run: |
-          sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
-        continue-on-error: true
+          cd ${{ github.workspace }}
+          bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
 
       # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
       - name: Build from sources (PowerShell with MSVC 2022)
         if: ${{ matrix.sys.os == 'windows-2022' }}
         shell: powershell
         run: |
-          & '${{ env.vsdevshell }}' ${{ env.vsdevshellopts }}
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
           cd "${{ github.workspace }}\src"
           make SHELL="powershell.exe" -f Makefile.win
-        env:
-          vsdevshell: ${{ matrix.sys.os == 'windows-2022' && 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' || 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' }}
-          vsdevshellopts: ${{ matrix.sys.os == 'windows-2022' && '-Arch amd64 -HostArch amd64' || '' }}
 
       # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
       # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
@@ -242,7 +207,6 @@ jobs:
           choco install -y zip
           zip -9 -j "${{ env.base_name }}.zip" *
           echo " [${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | ${{ steps.prepare.outputs.CCMAX }} | Windows x64 | --- | --- " > "${{ env.base_name }}.txt"
-          bash -c "ls -l"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
