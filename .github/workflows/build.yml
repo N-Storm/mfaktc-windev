@@ -175,7 +175,9 @@ jobs:
       - name: Prepare sources and gather info
         id: prepare
         shell: bash
-        run: bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
+        run: |
+          bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
+          cat .github/workflows/scripts/gather_info.sh.out >> $GITHUB_OUTPUT
 
       # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
       - name: Build from sources (PowerShell with MSVC 2022)
@@ -204,7 +206,7 @@ jobs:
       - name: Prepare build archive with description
         shell: bash
         run: |
-          [[ -x "$(which zip)" ]] && pacman -S --noconfirm zip
+          choco install -y --no-progress zip
           zip -9 -j "${{ env.base_name }}.zip" *
           echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
           ${{ steps.prepare.outputs.CC_MIN }} - ${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
