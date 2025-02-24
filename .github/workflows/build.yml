@@ -112,7 +112,7 @@ jobs:
             cd /workspace
             zip -9 -j ${{ env.base_name }}.zip *
             echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
-            ${{ steps.prepare.outputs.CC_MIN }} - ${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+            ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
             ${{ steps.prepare.outputs.CC_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
@@ -208,7 +208,7 @@ jobs:
           choco install -y --no-progress zip
           zip -9 -j "${{ env.base_name }}.zip" *
           echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
-          ${{ steps.prepare.outputs.CC_MIN }} - ${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+          ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
           ${{ steps.prepare.outputs.CC_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
 
       - name: Upload build artifacts
