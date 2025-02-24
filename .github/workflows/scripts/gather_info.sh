@@ -83,7 +83,7 @@ elif [[ -x "$(which powershell.exe)" ]]; then
   CC_VER="${CC_VSPROD}, $(echo $CC_VSINFO | grep InstallationVersion | cut -d':' -f2 | xargs)"
 else
   CC_VER="$(gcc --version | head -n1)"
-  OS_VER=$(grep PRETTY_NAME /etc/os-release | cut -d'=' -f2-)
+  OS_VER="$(grep PRETTY_NAME /etc/os-release | cut -d'=' -f2- | tr -d '"')"
 fi
 
 NVCC_VER="$(nvcc --version | tail -n1)"

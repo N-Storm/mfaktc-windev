@@ -165,8 +165,7 @@ jobs:
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
           cuda: ${{ matrix.sys.cuda_version }}
-          sub-packages: ${{ ( startsWith(matrix.sys.cuda, '12.') || startsWith(matrix.sys.cuda, '11.') || startsWith(matrix.sys.cuda, '10.') ||
-                          startsWith(matrix.sys.cuda, '9.') ) && '[ "nvcc", "visual_studio_integration", "cudart" ]' || '[]' }}
+          sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
 
       - name: Checkout repo
         uses: actions/checkout@v4
