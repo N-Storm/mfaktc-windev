@@ -211,20 +211,25 @@ jobs:
         continue-on-error: true
 
       # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
+      - name: Build from sources (PowerShell with MSVC 2022)
+        if: ${{ matrix.sys.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          & '${{ env.vsdevshell }}' ${{ env.vsdevshellopts }}
+          cd "${{ github.workspace }}\src"
+          make SHELL="powershell.exe" -f Makefile.win
+        env:
+          vsdevshell: ${{ matrix.sys.os == 'windows-2022' && 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' || 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' }}
+          vsdevshellopts: ${{ matrix.sys.os == 'windows-2022' && '-Arch amd64 -HostArch amd64' || '' }}
+
       # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
       # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
       # quotes when invoked from Make.
-      - name: Build from sources
+      - name: Build from sources (cmd.exe with MSVC 2019)
+        if: ${{ matrix.sys.os == 'windows-2019' }}
         shell: cmd
-        run: ${{ env.vsdevshellcmd }} ${{ env.vsdevshellcmdopts }}
-        env:
-          vsdevshell: ${{ matrix.sys.os == 'windows-2022' && 'powershell' || 'cmd' }}
-          vsdevshellcmd: ${{ matrix.sys.os == 'windows-2022' &&
-            'powershell -Command "& \"C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1\" ' ||
-            '"C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"' }}
-          vsdevshellcmdopts: ${{ matrix.sys.os == 'windows-2022' &&
-            '-Arch amd64 -HostArch amd64; cd \"${{ github.workspace }}\src\"; make SHELL=\"powershell.exe\" -f Makefile.win"' ||
-            '& cd src & make SHELL="powershell.exe" -f Makefile.win' }}
+        run: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" & cd src & make SHELL="powershell.exe" -f Makefile.win
 
 #      - name: Setup tmate session
 #        if: ${{ failure() }}
