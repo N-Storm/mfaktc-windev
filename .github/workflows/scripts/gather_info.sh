@@ -31,7 +31,7 @@ export GSORT='/usr/bin/sort'
 
 declare -a CUDA_VERSION
 CUDA_VERSION=( $(echo "$1" | head -n1 | grep -Eom1 -e '^[1-9]([0-9])?\.[0-9]{1,2}(\.[0-9]{1,3})?$' | tr '.' ' ') )
-if [[ -z "${CUDA_VERSION[@]}" ]]; then
+if [[ -z "${CUDA_VERSION[*]}" ]]; then
   echo "ERROR! Can't parse CUDA version $1" >&2
   exit 2
 fi
@@ -48,7 +48,6 @@ NVCC_REGEX='compute_[1-9][0-9]{1,2}'
 
 declare -a CC_LIST
 CC_LIST=( $(nvcc $NVCC_OPTS | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs) )
-CC_LIST=( 50 89 90 120 )
 if [ ${#CC_LIST[*]} -eq 0 ]; then
   echo "ERROR! Unable to parse a list of CCs" >&2
   exit 3
@@ -56,19 +55,20 @@ elif [ ${#CC_LIST[*]} -lt 3 ]; then
   echo "WARN Number of supported CC versions less than 3" >&2
 fi
 
-echo "All supported CCs: ${CC_LIST[@]}, CC_MIN=${CC_LIST[0]}, CC_MAX=${CC_LIST[-1]}"
-echo -e "CC_LIST=\"${CC_LIST[@]}\"\nCC_MIN=${CC_LIST[0]}\nCC_MAX=${CC_LIST[-1]}" >> $0.out
+echo "All supported CCs: ${CC_LIST[*]}, CC_MIN=${CC_LIST[0]}, CC_MAX=${CC_LIST[-1]}"
+echo -e "CC_LIST=\"${CC_LIST[*]}\"\nCC_MIN=${CC_LIST[0]}\nCC_MAX=${CC_LIST[-1]}" >> $0.out
 
 echo 'Removing NVCCFLAGS strings with CC arch entries from the Makefile & Makefile.win and populating with discovered supported values.'
 sed -i '/^NVCCFLAGS += --generate-code arch=compute.*/d' src/Makefile.win src/Makefile
-for CC in ${CC_LIST[@]}; do
+for CC in "${CC_LIST[@]}"; do
   sed -i "/^NVCCFLAGS = .*\$/a NVCCFLAGS += --generate-code arch=compute_${CC},code=sm_${CC}" src/Makefile src/Makefile.win
 done
 
 if [ $CUDA_VER -ge 110 ]; then
   echo 'Adding NVCCFLAGS to allow unsupported MSVC compiler versions...'
   sed -i '/^NVCCFLAGS = .*/a NVCCFLAGS += -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH' src/Makefile.win
-else
+fi
+if [ $CUDA_VER -lt 120 ]; then
   echo "Adding libraries to LDFLAGS to support static build on older Ubuntu versions..."
   sed -i -E 's/^(LDFLAGS = .*? -lcudart_static) (.*)/\1 -ldl -lrt -lpthread \2/' src/Makefile
 fi

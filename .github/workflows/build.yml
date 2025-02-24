@@ -174,9 +174,7 @@ jobs:
       - name: Prepare sources and gather info
         id: prepare
         shell: bash
-        run: |
-          cd ${{ github.workspace }}
-          bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
+        run: bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
 
       # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
       - name: Build from sources (PowerShell with MSVC 2022)
