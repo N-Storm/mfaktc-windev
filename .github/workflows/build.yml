@@ -234,8 +234,9 @@ jobs:
       - name: Prepare list of release files & release notes
         id: makeinfo
         run: |
-          echo -e "Binary releases (automated builds) below. Max CC in the table means maximum supported compute capability version without dot (i.e. 90 reads as 9.0).\n" > RELEASE_NOTES.txt
-          echo "Filename | Max CC | Build OS | GCC version | NVCC version" >> RELEASE_NOTES.txt
+          echo "Binary releases (automated builds) below. CC in the table means minimum and maximum supported" > RELEASE_NOTES.txt
+          echo "compute capability versions without dot (i.e. 90 means 9.0 compute capability).\n" >> RELEASE_NOTES.txt
+          echo "File | CC | Build OS | Compiler version | NVCC version" >> RELEASE_NOTES.txt
           echo "--- | --- | --- | --- | ---" >> RELEASE_NOTES.txt
           cat mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*.txt | sort -Vr >> RELEASE_NOTES.txt
           echo 'RELEASE_FILES<<EOF' > $GITHUB_OUTPUT
