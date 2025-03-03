@@ -176,7 +176,7 @@ jobs:
         if: matrix.sys.cuda_version == '12.8.0'
         run: |
           choco install -y --no-progress wget
-          wget -O https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_571.96_windows.exe
+          wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_571.96_windows.exe
           cuda_12.8.0_571.96_windows.exe -s cudart_12.8 nvcc_12.8 visual_studio_integration_12.8
 
       - name: Checkout repo
