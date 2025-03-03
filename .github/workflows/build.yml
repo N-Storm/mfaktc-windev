@@ -195,7 +195,6 @@ jobs:
           ln -s "${{ env.CMAKE_CUDA_COMPILER }}" /usr/bin/nvcc
           bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
           cat .github/workflows/scripts/gather_info.sh.out >> $GITHUB_OUTPUT
-          sed -E 
 
       # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
       - name: Build from sources (PowerShell with MSVC 2022)
