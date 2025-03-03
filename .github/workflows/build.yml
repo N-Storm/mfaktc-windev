@@ -137,13 +137,14 @@ jobs:
         sys:
           - { cuda_version: '12.8.0', os: 'windows-2022' }
 #          - { cuda_version: '12.6.3', os: 'windows-2022' }
+          - { cuda_version: '12.6.3', os: 'windows-2019' }
 #          - { cuda_version: '12.5.1', os: 'windows-2022' }
 #          - { cuda_version: '12.4.1', os: 'windows-2022' }
 #          - { cuda_version: '12.3.2', os: 'windows-2022' }
 #          - { cuda_version: '12.2.2', os: 'windows-2022' }
 #          - { cuda_version: '12.1.1', os: 'windows-2022' }
 #          - { cuda_version: '12.0.1', os: 'windows-2022' }
-          - { cuda_version: '12.0.1', os: 'windows-2019' }
+#          - { cuda_version: '12.0.1', os: 'windows-2019' }
 #          - { cuda_version: '11.8.0', os: 'windows-2022' }
 #          - { cuda_version: '11.7.0', os: 'windows-2022' }
 #          - { cuda_version: '11.6.2', os: 'windows-2022' }
@@ -153,7 +154,7 @@ jobs:
 #          - { cuda_version: '11.3.1', os: 'windows-2022' }
 #          - { cuda_version: '11.2.2', os: 'windows-2019' }
 #          - { cuda_version: '11.1.1', os: 'windows-2019' }
-          - { cuda_version: '11.0.1', os: 'windows-2019' }
+#          - { cuda_version: '11.0.1', os: 'windows-2019' }
 #          - { cuda_version: '10.0.130', os: 'windows-2019' }
 #          - { cuda_version: '9.2.148', os: 'windows-2019' }
 #          - { cuda_version: '8.0.61', os: 'windows-2019' }
@@ -175,8 +176,10 @@ jobs:
 
       - name: Installing CUDA Toolkit 12.8.0
         if: matrix.sys.cuda_version == '12.8.0'
-        shell: powershell
+        shell: cmd
         run: |
+          choco install -y --no-progress wget
+          echo "==="
           wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_571.96_windows.exe
           echo "==="
           .\cuda_12.8.0_571.96_windows.exe -s cudart_12.8 nvcc_12.8
