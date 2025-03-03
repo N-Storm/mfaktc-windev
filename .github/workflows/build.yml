@@ -162,6 +162,7 @@ jobs:
 
     steps:
       - name: Installing CUDA Toolkit
+        if: matrix.sys.cuda_version != '12.8.0'
         id: cuda-toolkit
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
@@ -170,6 +171,13 @@ jobs:
           sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
           use-local-cache: false
           use-github-cache: false
+
+      - name: Installing CUDA Toolkit 12.8.0
+        if: matrix.sys.cuda_version == '12.8.0'
+        shell: bash
+        run: |
+          wget -O https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_571.96_windows.exe
+          ./cuda_12.8.0_571.96_windows.exe -s cudart_12.8 nvcc_12.8 visual_studio_integration_12.8
 
       - name: Checkout repo
         uses: actions/checkout@v3
