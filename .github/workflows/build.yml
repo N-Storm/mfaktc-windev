@@ -8,6 +8,7 @@ on:
 jobs:
 # Begin job "build-linux"
   build-linux:
+    if: false
     runs-on: ubuntu-latest
 
     strategy:
@@ -136,22 +137,30 @@ jobs:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
           - { cuda_version: '12.8.0', os: 'windows-2022' }
+#          - { cuda_version: '12.8.0', os: 'windows-2019' }
+          - { cuda_version: '12.5.0', os: 'windows-2025' }          
+#          - { cuda_version: '12.6.3', os: 'windows-2025' }
 #          - { cuda_version: '12.6.3', os: 'windows-2022' }
+#          - { cuda_version: '12.6.3', os: 'windows-2019' }
 #          - { cuda_version: '12.5.1', os: 'windows-2022' }
+#          - { cuda_version: '12.5.1', os: 'windows-2019' }
 #          - { cuda_version: '12.4.1', os: 'windows-2022' }
 #          - { cuda_version: '12.3.2', os: 'windows-2022' }
 #          - { cuda_version: '12.2.2', os: 'windows-2022' }
 #          - { cuda_version: '12.1.1', os: 'windows-2022' }
-          - { cuda_version: '12.0.1', os: 'windows-2022' }
-          - { cuda_version: '11.8.0', os: 'windows-2022' }
+#          - { cuda_version: '12.0.1', os: 'windows-2022' }
+#          - { cuda_version: '12.0.1', os: 'windows-2019' }
+#          - { cuda_version: '11.8.0', os: 'windows-2019' }
+#          - { cuda_version: '11.8.0', os: 'windows-2022' }
 #          - { cuda_version: '11.7.0', os: 'windows-2022' }
 #          - { cuda_version: '11.6.2', os: 'windows-2022' }
 #          - { cuda_version: '11.5.2', os: 'windows-2022' }
-          - { cuda_version: '11.4.4', os: 'windows-2022' }
+#          - { cuda_version: '11.4.4', os: 'windows-2022' }
+#          - { cuda_version: '11.4.0', os: 'windows-2022' }
 #          - { cuda_version: '11.3.1', os: 'windows-2022' }
-          - { cuda_version: '11.2.2', os: 'windows-2019' }
-          - { cuda_version: '11.1.1', os: 'windows-2019' }
-          - { cuda_version: '11.0.1', os: 'windows-2019' }
+#          - { cuda_version: '11.2.2', os: 'windows-2019' }
+#          - { cuda_version: '11.1.1', os: 'windows-2019' }
+#          - { cuda_version: '11.0.1', os: 'windows-2019' }
 #          - { cuda_version: '10.0.130', os: 'windows-2019' }
 #          - { cuda_version: '9.2.148', os: 'windows-2019' }
 #          - { cuda_version: '8.0.61', os: 'windows-2019' }
@@ -160,32 +169,48 @@ jobs:
       base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
 
     steps:
-      - name: Installing CUDA Toolkit
-        id: cuda-toolkit
-        uses: Jimver/cuda-toolkit@v0.2.21
-        with:
-          cuda: ${{ matrix.sys.cuda_version }}
-          sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
+#      - name: Installing CUDA Toolkit
+#        id: cuda-toolkit
+#        uses: Jimver/cuda-toolkit@v0.2.21
+#        with:
+#          cuda: ${{ matrix.sys.cuda_version }}
 
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
+      - name: Get cuda script
+        shell: bash
+        run: cp .github/workflows/scripts/setup_cuda.ps1 ./
+
+      - name: Setup CUDA Toolkit
+        shell: pwsh
+        run: "${{ github.workspace }}\\setup_cuda.ps1"
+        env:
+          INPUT_CUDA_VERSION: ${{ matrix.sys.cuda_version }}
+        
       - name: Prepare sources and gather info
         id: prepare
         shell: bash
         run: |
+          alias nvcc='${{ env.CMAKE_CUDA_COMPILER }}'
+          ln -s "${{ env.CMAKE_CUDA_COMPILER }}" /usr/bin/nvcc
           bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
           cat .github/workflows/scripts/gather_info.sh.out >> $GITHUB_OUTPUT
 
       # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
       - name: Build from sources (PowerShell with MSVC 2022)
-        if: ${{ matrix.sys.os == 'windows-2022' }}
+        if: ${{ matrix.sys.os != 'windows-2019' }}
         shell: powershell
         run: |
           & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
           cd "${{ github.workspace }}\src"
           Copy-Item mfaktc.ini ..
-          make SHELL="powershell.exe" -d -f Makefile.win
+          $env:PATH = "${{ env.CUDA_PATH }}\bin;$env:PATH"
+          echo $env:PATH
+          echo '==1=='
+          nvcc --help
+          echo '==2=='
+          make SHELL="powershell.exe" -f Makefile.win
 
       # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
       # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
