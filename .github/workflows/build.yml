@@ -184,12 +184,6 @@ jobs:
         env:
           INPUT_CUDA_VERSION: 12.5.0
         
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-
       - name: Checkout repo
         uses: actions/checkout@v3
 
@@ -201,6 +195,7 @@ jobs:
           ln -s "${{ env.CMAKE_CUDA_COMPILER }}" /usr/bin/nvcc
           bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
           cat .github/workflows/scripts/gather_info.sh.out >> $GITHUB_OUTPUT
+          sed -E 
 
       # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
       - name: Build from sources (PowerShell with MSVC 2022)
@@ -210,7 +205,8 @@ jobs:
           & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
           cd "${{ github.workspace }}\src"
           Copy-Item mfaktc.ini ..
-          make SHELL="powershell.exe" -d -f Makefile.win
+          Set-Alias nvcc
+          make SHELL="powershell.exe -Command 'Set-Alias nvcc ${{ env.CMAKE_CUDA_COMPILER }};'" -d -f Makefile.win
 
       # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
       # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
