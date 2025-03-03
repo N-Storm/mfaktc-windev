@@ -205,7 +205,10 @@ jobs:
           cd "${{ github.workspace }}\src"
           Copy-Item mfaktc.ini ..
           $env:PATH += ";${{ env.CUDA_PATH }}\bin"
-          make SHELL="powershell.exe" -d -f Makefile.win
+          echo $env:PATH
+          echo '==='
+          nvcc --help
+          make SHELL="powershell.exe" -f Makefile.win
 
       # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
       # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
