@@ -175,9 +175,12 @@ jobs:
 #        with:
 #          cuda: ${{ matrix.sys.cuda_version }}
 
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
       - name: Get cuda script
-        run: |
-          & 'C:\msys64\usr\bin\wget' https://github.com/thewh1teagle/vibe/raw/refs/heads/main/scripts/setup_cuda.ps1
+        shell: bash
+        run: cp .github/workflows/scripts/setup_cuda.ps1 ./
 
       - name: Setup CUDA Toolkit
         shell: pwsh
@@ -185,9 +188,6 @@ jobs:
         env:
           INPUT_CUDA_VERSION: ${{ matrix.sys.cuda_version }}
         
-      - name: Checkout repo
-        uses: actions/checkout@v3
-
       - name: Prepare sources and gather info
         id: prepare
         shell: bash
