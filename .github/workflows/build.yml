@@ -135,31 +135,31 @@ jobs:
         # Available version can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
-#          - { cuda_version: '12.8.0', os: 'windows-2022' }
-          - { cuda_version: '12.8.0', os: 'windows-2019' }
+          - { cuda_version: '12.5.0', os: 'windows-2022' }
+#          - { cuda_version: '12.8.0', os: 'windows-2019' }
 #          - { cuda_version: '12.8.0', os: 'windows-2025' }          
-          - { cuda_version: '12.6.3', os: 'windows-2025' }
+#          - { cuda_version: '12.6.3', os: 'windows-2025' }
 #          - { cuda_version: '12.6.3', os: 'windows-2022' }
 #          - { cuda_version: '12.6.3', os: 'windows-2019' }
 #          - { cuda_version: '12.5.1', os: 'windows-2022' }
-          - { cuda_version: '12.5.1', os: 'windows-2019' }
+#          - { cuda_version: '12.5.1', os: 'windows-2019' }
 #          - { cuda_version: '12.4.1', os: 'windows-2022' }
 #          - { cuda_version: '12.3.2', os: 'windows-2022' }
 #          - { cuda_version: '12.2.2', os: 'windows-2022' }
 #          - { cuda_version: '12.1.1', os: 'windows-2022' }
 #          - { cuda_version: '12.0.1', os: 'windows-2022' }
 #          - { cuda_version: '12.0.1', os: 'windows-2019' }
-          - { cuda_version: '11.8.0', os: 'windows-2019' }
+#          - { cuda_version: '11.8.0', os: 'windows-2019' }
 #          - { cuda_version: '11.8.0', os: 'windows-2022' }
 #          - { cuda_version: '11.7.0', os: 'windows-2022' }
 #          - { cuda_version: '11.6.2', os: 'windows-2022' }
 #          - { cuda_version: '11.5.2', os: 'windows-2022' }
-          - { cuda_version: '11.4.4', os: 'windows-2022' }
+#          - { cuda_version: '11.4.4', os: 'windows-2022' }
 #          - { cuda_version: '11.4.0', os: 'windows-2022' }
 #          - { cuda_version: '11.3.1', os: 'windows-2022' }
 #          - { cuda_version: '11.2.2', os: 'windows-2019' }
 #          - { cuda_version: '11.1.1', os: 'windows-2019' }
-          - { cuda_version: '11.0.1', os: 'windows-2019' }
+#          - { cuda_version: '11.0.1', os: 'windows-2019' }
 #          - { cuda_version: '10.0.130', os: 'windows-2019' }
 #          - { cuda_version: '9.2.148', os: 'windows-2019' }
 #          - { cuda_version: '8.0.61', os: 'windows-2019' }
@@ -168,11 +168,33 @@ jobs:
       base_name: mfaktc-${{ github.ref_name }}-win64-cuda${{ matrix.sys.cuda_version }}
 
     steps:
-      - name: Installing CUDA Toolkit
-        id: cuda-toolkit
-        uses: Jimver/cuda-toolkit@v0.2.21
+#      - name: Installing CUDA Toolkit
+#        id: cuda-toolkit
+#        uses: Jimver/cuda-toolkit@v0.2.21
+#        with:
+#          cuda: ${{ matrix.sys.cuda_version }}
+
+      - name: Get cuda script
+        run: |
+          & 'C:\msys64\usr\bin\wget' https://github.com/thewh1teagle/vibe/raw/refs/heads/main/scripts/setup_cuda.ps1
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
         with:
-          cuda: ${{ matrix.sys.cuda_version }}
+          limit-access-to-actor: true
+
+      - name: Setup CUDA Toolkit
+        shell: pwsh
+        run: scripts/setup_cuda.ps1
+        env:
+          INPUT_CUDA_VERSION: 12.5.0
+        
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
 
       - name: Checkout repo
         uses: actions/checkout@v3
