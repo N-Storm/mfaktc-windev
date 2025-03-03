@@ -136,9 +136,9 @@ jobs:
         # Available version can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
-          - { cuda_version: '12.5.0', os: 'windows-2022' }
+          - { cuda_version: '12.8.0', os: 'windows-2022' }
 #          - { cuda_version: '12.8.0', os: 'windows-2019' }
-#          - { cuda_version: '12.8.0', os: 'windows-2025' }          
+          - { cuda_version: '12.5.0', os: 'windows-2025' }          
 #          - { cuda_version: '12.6.3', os: 'windows-2025' }
 #          - { cuda_version: '12.6.3', os: 'windows-2022' }
 #          - { cuda_version: '12.6.3', os: 'windows-2019' }
@@ -183,7 +183,7 @@ jobs:
         shell: pwsh
         run: "${{ github.workspace }}\\setup_cuda.ps1"
         env:
-          INPUT_CUDA_VERSION: 12.5.0
+          INPUT_CUDA_VERSION: ${{ matrix.sys.cuda_version }}
         
       - name: Checkout repo
         uses: actions/checkout@v3
