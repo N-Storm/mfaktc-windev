@@ -178,15 +178,11 @@ jobs:
         run: |
           & 'C:\msys64\usr\bin\wget' https://github.com/thewh1teagle/vibe/raw/refs/heads/main/scripts/setup_cuda.ps1
 
-      - name: Setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-
       - name: Setup CUDA Toolkit
         shell: pwsh
-        run: setup_cuda.ps1
+        run: |
+          cd "${{ github.workspace }}"
+          setup_cuda.ps1
         env:
           INPUT_CUDA_VERSION: 12.5.0
         
