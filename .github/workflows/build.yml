@@ -136,8 +136,9 @@ jobs:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
           - { cuda_version: '12.8.0', os: 'windows-2022' }
+          - { cuda_version: '12.8.0', os: 'windows-2019' }
 #          - { cuda_version: '12.6.3', os: 'windows-2022' }
-          - { cuda_version: '12.6.3', os: 'windows-2019' }
+#          - { cuda_version: '12.6.3', os: 'windows-2019' }
 #          - { cuda_version: '12.5.1', os: 'windows-2022' }
 #          - { cuda_version: '12.4.1', os: 'windows-2022' }
 #          - { cuda_version: '12.3.2', os: 'windows-2022' }
@@ -164,23 +165,19 @@ jobs:
 
     steps:
       - name: Installing CUDA Toolkit
-        if: matrix.sys.cuda_version != '12.8.0'
+        if: matrix.sys.cuda_version != '12.8.0' || matrix.sys.os == 'windows-2019'
         id: cuda-toolkit
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
           cuda: ${{ matrix.sys.cuda_version }}
-          method: network
-          sub-packages: '[ "nvcc", "cudart" ]'
-          use-local-cache: false
-          use-github-cache: false
 
       - name: Installing CUDA Toolkit 12.8.0
-        if: matrix.sys.cuda_version == '12.8.0'
+        if: matrix.sys.cuda_version == '12.8.0' && matrix.sys.os == 'windows-2022'
         shell: cmd
         run: |
           choco install -y --no-progress wget
           echo "==="
-          wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_571.96_windows.exe
+          wget -q https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_571.96_windows.exe
           echo "==="
           .\cuda_12.8.0_571.96_windows.exe -s cudart_12.8 nvcc_12.8
 
