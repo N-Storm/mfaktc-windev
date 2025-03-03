@@ -197,6 +197,8 @@ jobs:
         id: prepare
         shell: bash
         run: |
+          alias nvcc='${{ env.CMAKE_CUDA_COMPILER }}'
+          ln -s "${{ env.CMAKE_CUDA_COMPILER }}" /usr/bin/nvcc
           bash .github/workflows/scripts/gather_info.sh ${{ matrix.sys.cuda_version }}
           cat .github/workflows/scripts/gather_info.sh.out >> $GITHUB_OUTPUT
 
