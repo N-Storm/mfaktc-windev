@@ -148,6 +148,7 @@ jobs:
 #          - { cuda_version: '11.6.2', os: 'windows-2022' }
 #          - { cuda_version: '11.5.2', os: 'windows-2022' }
           - { cuda_version: '11.4.4', os: 'windows-2022' }
+          - { cuda_version: '11.4.0', os: 'windows-2022' }
 #          - { cuda_version: '11.3.1', os: 'windows-2022' }
           - { cuda_version: '11.2.2', os: 'windows-2019' }
 #          - { cuda_version: '11.1.1', os: 'windows-2019' }
@@ -165,13 +166,13 @@ jobs:
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
           cuda: ${{ matrix.sys.cuda_version }}
-          use-local-cache: false
-          use-github-cache: true
           method: 'network'
           sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
+          use-local-cache: false
+          use-github-cache: false
 
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Prepare sources and gather info
         id: prepare
