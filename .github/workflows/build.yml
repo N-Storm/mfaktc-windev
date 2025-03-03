@@ -137,6 +137,8 @@ jobs:
         sys:
           - { cuda_version: '12.8.0', os: 'windows-2022' }
           - { cuda_version: '12.8.0', os: 'windows-2019' }
+          - { cuda_version: '12.8.0', os: 'windows-2025' }          
+          - { cuda_version: '12.6.3', os: 'windows-2025' }
 #          - { cuda_version: '12.6.3', os: 'windows-2022' }
 #          - { cuda_version: '12.6.3', os: 'windows-2019' }
 #          - { cuda_version: '12.5.1', os: 'windows-2022' }
@@ -165,7 +167,7 @@ jobs:
 
     steps:
       - name: Installing CUDA Toolkit
-        if: matrix.sys.cuda_version != '12.8.0' || matrix.sys.os == 'windows-2019'
+        if: matrix.sys.cuda_version != '12.8.0' || matrix.sys.os != 'windows-2022'
         id: cuda-toolkit
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
@@ -182,8 +184,8 @@ jobs:
           .\cuda_12.8.0_571.96_windows.exe -s cudart_12.8 nvcc_12.8
 
         # visual_studio_integration_12.8
+        # if: ${{ failure() }}
       - name: Setup tmate session
-        if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
         with:
           limit-access-to-actor: true
