@@ -166,8 +166,9 @@ jobs:
         with:
           cuda: ${{ matrix.sys.cuda_version }}
           use-local-cache: false
-          use-github-cache: false
-#          sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
+          use-github-cache: true
+          method: 'network'
+          sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
 
       - name: Checkout repo
         uses: actions/checkout@v4
