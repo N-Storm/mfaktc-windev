@@ -167,19 +167,18 @@ jobs:
         uses: Jimver/cuda-toolkit@v0.2.21
         with:
           cuda: ${{ matrix.sys.cuda_version }}
-          method: 'network'
+          method: network
           sub-packages: '[ "nvcc", "visual_studio_integration", "cudart" ]'
           use-local-cache: false
           use-github-cache: false
 
       - name: Installing CUDA Toolkit 12.8.0
         if: matrix.sys.cuda_version == '12.8.0'
-        shell: powershell
+        shell: bash
         run: |
-          choco install -y --no-progress wget
           echo "==="
           wget -q https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda_12.8.0_571.96_windows.exe
-          & '.\cuda_12.8.0_571.96_windows.exe' -s cudart_12.8 nvcc_12.8 visual_studio_integration_12.8
+          ./cuda_12.8.0_571.96_windows.exe -s cudart_12.8 nvcc_12.8 visual_studio_integration_12.8
 
       - name: Setup tmate session
         if: ${{ failure() }}
