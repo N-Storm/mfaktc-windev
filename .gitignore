@@ -15,8 +15,10 @@ mfaktc
 *.log
 results.txt
 results.json.txt
+results_sent.txt
 worktodo.txt
 worktodo.add
+/*.ini
 
 # other
 .vs/
