@@ -43,8 +43,10 @@ __device__ static void test_FC96_barrett92(int96 f, int192 b, unsigned int shift
   double ff;
 
   // Оптимизированное вычисление обратного деления
+  // ff = __uint2double_rn(f.d2) * 4294967296.0 + __uint2double_rn(f.d1);
+  // ff = __nv_ddiv_rn(1.0, ff);  // Быстрое деление вместо __drcp_rn
   ff = __uint2double_rn(f.d2) * 4294967296.0 + __uint2double_rn(f.d1);
-  ff = __nv_ddiv_rn(1.0, ff);  // Быстрое деление вместо __drcp_rn
+  ff = __drcp_rn(ff);  // Быстрое вычисление 1/ff
 
   // Используем shared memory для временных значений
   __shared__ int192 s_tmp192;
@@ -131,7 +133,7 @@ __device__ static void test_FC96_barrett88(int96 f, int192 b, unsigned int shift
 
   // Оптимизированное вычисление обратного деления
   ff = __uint2double_rn(f.d2) * 4294967296.0 + __uint2double_rn(f.d1);
-  ff = __nv_ddiv_rn(1.0, ff);  // Используем быстрое деление
+  ff = __drcp_rn(ff);  // Используем быстрое деление
 
   __shared__ int192 s_tmp192;
   __shared__ int96 s_tmp96;
@@ -216,7 +218,7 @@ __device__ static void test_FC96_barrett87(int96 f, int192 b, unsigned int shift
 
   // Оптимизированное вычисление обратного деления
   ff = __uint2double_rn(f.d2) * 4294967296.0 + __uint2double_rn(f.d1);
-  ff = __nv_ddiv_rn(1.0, ff); // Более точное и быстрое деление
+  ff = __drcp_rn(ff); // Более точное и быстрое деление
 
   __shared__ int192 s_tmp192;
 
@@ -299,7 +301,7 @@ __device__ static void test_FC96_barrett79(int96 f, int192 b, unsigned int shift
   // Оптимизированное вычисление ff с использованием double для большей точности
   ff = __uint2double_rn(f.d2);
   ff = ff * 4294967296.0 + __uint2double_rn(f.d1);
-  ff = __nv_ddiv_rn(1.0, ff); // Точное вычисление обратного значения f
+  ff = __drcp_rn(ff); // Точное вычисление обратного значения f
 
 #ifndef DEBUG_GPU_MATH
   inv_160_96(&u, f, ff);

@@ -54,6 +54,8 @@ echo -e "CUDA_VER_MAJOR=${CUDA_VER_MAJOR}\nCUDA_VER_MINOR=${CUDA_VER_MINOR}" > "
 NVCC_REGEX='compute_[1-9][0-9]{1,2}'
 # Special case with CUDA 11.0.x. It's help lists compute_32 and higher, but only CCs from 35 are supported.
 [ $CUDA_VER -eq 110 ] && NVCC_REGEX='compute_(3[5-9]|[4-9][0-9])'
+# [TESTING]
+[ $CUDA_VER -ge 120 ] && NVCC_REGEX='compute_(89|1[12][0-9])'
 
 declare -a CC_LIST
 CC_LIST=( $(nvcc $NVCC_OPTS | grep -Eoe "$NVCC_REGEX" | cut -d '_' -f2 | $GSORT -un | xargs) )
