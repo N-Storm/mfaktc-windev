@@ -115,6 +115,7 @@ jobs:
         env:
           SCRIPT: |
             cd /workspace
+            git config --global --add safe.directory /workspace
             bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
         run: |
           docker exec build-container bash -c "$SCRIPT"
@@ -133,22 +134,19 @@ jobs:
 
       - name: Prepare zip archive with the description
         env:
-          base_name: mfaktc-${{ steps.prepare.outputs.MFAKTC_VER }}-${{ env.base_name_suffix }}
           SCRIPT: |
             cd /workspace
-            zip -9 -j ${{ env.base_name }}.zip *
-            echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+            zip -9 -j ${{ steps.prepare.outputs.BASE_NAME }}.zip *
+            echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
             ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
-            ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
+            ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
         run: docker exec build-container bash -c "$SCRIPT"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.base_name }}
-          path: ${{ env.base_name }}.*
-        env:
-          base_name: ${{ steps.prepare.outputs.MFAKTC_VER }}-${{ env.base_name_suffix }}
+          name: ${{ steps.prepare.outputs.BASE_NAME }}
+          path: ${{ steps.prepare.outputs.BASE_NAME }}.*
 # End job "build-linux"
 
 # Begin job "build-win"
@@ -245,20 +243,16 @@ jobs:
         shell: bash
         run: |
           choco install -y --no-progress zip
-          zip -9 -j "${{ env.base_name }}.zip" *
-          echo "[${{ env.base_name }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.base_name }}.zip) | \
+          zip -9 -j "${{ steps.prepare.outputs.BASE_NAME }}.zip" *
+          echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
           ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
-          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ env.base_name }}.txt
-        env:
-          base_name: mfaktc-${{ steps.prepare.outputs.MFAKTC_VER }}-${{ env.base_name_suffix }}
+          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.base_name }}
-          path: ${{ env.base_name }}.*
-        env:
-          base_name: mfaktc-${{ steps.prepare.outputs.MFAKTC_VER }}-${{ env.base_name_suffix }}
+          name: ${{ steps.prepare.outputs.BASE_NAME }}
+          path: ${{ steps.prepare.outputs.BASE_NAME }}.*
 # End job "build-win"
 
 # Begin job "upload-release"
