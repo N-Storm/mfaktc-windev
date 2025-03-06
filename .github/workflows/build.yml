@@ -204,6 +204,7 @@ jobs:
         with:
           cuda: ${{ matrix.sys.cuda_version }}
           sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}
+          use-local-cache: false
 
       - name: Add CUDA bin dir to PATH
         shell: powershell
@@ -273,7 +274,7 @@ jobs:
       contents: write
 
     env:
-      base_name: mfaktc-${{ github.ref_name }}-*-cuda*/mfaktc-${{ github.ref_name }}-*-cuda*
+      base_name: mfaktc-${{ github.ref_name }}*-cuda*/mfaktc-${{ github.ref_name }}*-cuda*
 
     steps:
 

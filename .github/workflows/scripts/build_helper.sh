@@ -117,10 +117,10 @@ GIT_TAG_VER="$(git describe --tags)"
 # since last tag when git HEAD isn't directly referenced by a tag. Or just a tag when current commit has tag
 # reference. This gives shorter BASE_NAME without commit hash for releases.
 if [[ "$MFAKTC_VER" != "${GIT_TAG_VER:0:${#MFAKTC_VER}}" ]]; then
-  echo "Warning: version from git describe (${GIT_TAG_VER}) doesn't begins with MFAKTC_VER (${MFAKTC_VER}) from params.h"
-  echo "Using version from params.h and short commit hash (${SHA_SHORT}) for BASE_NAME"
   SHA_SHORT="$(git rev-parse --short HEAD)"
   BASE_NAME="mfaktc-${MFAKTC_VER}-${SHA_SHORT}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
+  echo "Warning: version from git describe (${GIT_TAG_VER}) doesn't begins with MFAKTC_VER (${MFAKTC_VER}) from params.h"
+  echo "Using version from params.h and short commit hash (${SHA_SHORT}) for BASE_NAME"
 else
   BASE_NAME="mfaktc-${GIT_TAG_VER}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
 fi
