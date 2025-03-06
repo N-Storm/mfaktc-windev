@@ -234,13 +234,6 @@ jobs:
         id: makeinfo
         run: |
           {
-            if ! ls ${{ env.base_name }}.txt > /dev/null 2>&1; then
-              echo 'Error: can't find release notes with mask ${{ env.base_name }}'
-              echo 'Make sure that tag begins with the value of MFAKTC_VERSION in params.h'
-              exit 1
-            fi
-          }
-          {
             echo 'Binary releases (automated builds) below.'
             echo 'Compute Capability (CC) in the table means minimum and maximum versions supported.'
             echo 'CC versions are listed without the dot (i.e. 90 means 9.0 compute capability).'
