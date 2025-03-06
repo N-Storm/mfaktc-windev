@@ -39,39 +39,6 @@ jobs:
           # Specified version combination must exist as CUDA container image from NVidia: nvcr.io/nvidia/cuda:${{ matrix.sys.cuda_version }}-devel-${{ matrix.sys.ct_os }}
           # Available versions can be found here: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda/tags (note that only Ubuntus are supported by this action)
           - { cuda_version: '12.8.0', ct_os: 'ubuntu24.04' }
-          - { cuda_version: '12.6.3', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.6.2', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.6.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.6.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.5.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.5.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.4.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.4.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.3.2', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.3.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.3.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.2.2', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.2.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.1.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.1.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '12.0.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '12.0.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '11.8.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '11.7.1', ct_os: 'ubuntu22.04' }
-          # - { cuda_version: '11.7.0', ct_os: 'ubuntu22.04' }
-          - { cuda_version: '11.6.2', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.6.1', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.6.0', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.5.2', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.5.1', ct_os: 'ubuntu20.04' }
-          # - { cuda_version: '11.5.0', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.4.3', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.3.1', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.2.2', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.1.1', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '11.0.3', ct_os: 'ubuntu20.04' }
-          - { cuda_version: '10.2', ct_os: 'ubuntu18.04' }
-          - { cuda_version: '9.2', ct_os: 'ubuntu18.04' }
           - { cuda_version: '8.0', ct_os: 'ubuntu16.04' }
 
     env:
@@ -165,25 +132,7 @@ jobs:
         # Available version can be viewed at the Jimver/cuda-toolkit action sources:
         # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
         sys:
-          - { cuda_version: '12.8.0', os: 'windows-2022' }
-          - { cuda_version: '12.6.3', os: 'windows-2022' }
-          - { cuda_version: '12.5.1', os: 'windows-2022' }
-          - { cuda_version: '12.4.1', os: 'windows-2022' }
-          - { cuda_version: '12.3.2', os: 'windows-2022' }
-          - { cuda_version: '12.2.2', os: 'windows-2022' }
-          - { cuda_version: '12.1.1', os: 'windows-2022' }
-          - { cuda_version: '12.0.1', os: 'windows-2022' }
-          - { cuda_version: '11.8.0', os: 'windows-2022' }
-          - { cuda_version: '11.7.1', os: 'windows-2022' }
-          - { cuda_version: '11.6.2', os: 'windows-2022' }
-          - { cuda_version: '11.5.2', os: 'windows-2022' }
-          - { cuda_version: '11.4.4', os: 'windows-2022' }
           - { cuda_version: '11.3.1', os: 'windows-2022' }
-          - { cuda_version: '11.2.2', os: 'windows-2019' }
-          - { cuda_version: '11.1.1', os: 'windows-2019' }
-          - { cuda_version: '11.0.1', os: 'windows-2019' }
-          - { cuda_version: '10.0.130', os: 'windows-2019' }
-          - { cuda_version: '9.2.148', os: 'windows-2019' }
           - { cuda_version: '8.0.61', os: 'windows-2019' }
 
 #    env:
@@ -284,11 +233,13 @@ jobs:
       - name: Prepare list of release files & release notes
         id: makeinfo
         run: |
-          if ! ls ${{ env.base_name }}.txt > /dev/null 2>&1; then
-            echo 'Error: can't find release notes with mask ${{ env.base_name }}'
-            echo 'Make sure that tag begins with the value of MFAKTC_VERSION in params.h'
-            exit 1
-          fi
+          {
+            if ! ls ${{ env.base_name }}.txt > /dev/null 2>&1; then
+              echo 'Error: can't find release notes with mask ${{ env.base_name }}'
+              echo 'Make sure that tag begins with the value of MFAKTC_VERSION in params.h'
+              exit 1
+            fi
+          }
           {
             echo 'Binary releases (automated builds) below.'
             echo 'Compute Capability (CC) in the table means minimum and maximum versions supported.'
