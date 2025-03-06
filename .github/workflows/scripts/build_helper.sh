@@ -125,4 +125,8 @@ else
   BASE_NAME="mfaktc-${GIT_TAG_VER}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
 fi
 
+SHA_SHORT="$(git rev-parse --short HEAD)"
+echo "DEBUG BASE_NAME_HEA: mfaktc-${MFAKTC_VER}-${SHA_SHORT}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
+echo "DEBUG BASE_NAME_GIT: mfaktc-${GIT_TAG_VER}-${OS_TYPE}-cuda${CUDA_VERSION_FULL}"
+
 echo -e "COMPILER_VER=$COMPILER_VER\nNVCC_VER=$NVCC_VER\nOS_VER=${OS_VER}\nBASE_NAME=${BASE_NAME}" | tee -a "$0.out"
