@@ -5,12 +5,12 @@ CUDA_LIB = -L$(CUDA_DIR)/lib64/
 
 # compiler settings for .c files (CPU)
 CC = gcc
-CFLAGS = -Wall -Wextra -O2 $(CUDA_INCLUDE) -malign-double
+CFLAGS = -Wall -Wextra -O3 -flto $(CUDA_INCLUDE) -malign-double -DGWDEBUG
 CFLAGS_EXTRA_SIEVE = -funroll-all-loops
 
 # compiler settings for .cu files (GPU)
 NVCC = nvcc
-NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v
+NVCCFLAGS = $(CUDA_INCLUDE) --ptxas-options=-v -O3
 
 # generate code for various compute capabilities
 # NVCCFLAGS += --generate-code arch=compute_11,code=sm_11 # CC 1.1, 1.2 and 1.3 GPUs will use this code (1.0 is not possible for mfaktc)
@@ -35,7 +35,7 @@ NVCCFLAGS += --compiler-options=-Wall
 
 # Linker
 LD = gcc
-LDFLAGS = -fPIC $(CUDA_LIB) -lcudart_static -lm -lstdc++
+LDFLAGS = -flto -fPIC $(CUDA_LIB) -lcudart_static -lm -lstdc++
 
 INSTALL = install
 

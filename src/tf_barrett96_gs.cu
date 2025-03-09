@@ -282,6 +282,9 @@ a is precomputed on host ONCE.
   extern __shared__ unsigned short k_deltas[];		// Write bits to test here.  Launching program must estimate
 							// how much shared memory to allocate based on number of primes sieved.
 
+  // DEBUG TF
+  // printf("Entering mfaktc_barrett76_gs()\n");
+
   create_k_deltas(bit_array, bits_to_process, &total_bit_count, k_deltas);
   create_fbase96(&f_base, k_base, exp, bits_to_process);
 
@@ -298,11 +301,16 @@ a is precomputed on host ONCE.
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
+    printf("===BEG\n");
+    printf("f: 0x%08X%08X%08X\n", f.d2, f.d1, f.d0);
+
     test_FC96_barrett76(f, b_preinit, initial_shifter_value, RES
 #ifdef DEBUG_GPU_MATH
                         , bit_max64, modbasecase_debug
 #endif
                         );
+    printf("RES: %d\n", *RES);
+    printf("===END\n");
   }
 }
 

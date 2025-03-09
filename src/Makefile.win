@@ -1,8 +1,8 @@
 CC = cl
-CFLAGS = /Ox /Oy /W2 /fp:fast /I"$(CUDA_PATH)\include" /I"$(CUDA_PATH)\include\cudart" /nologo
+CFLAGS = /O2 /Oy /W2 /fp:fast /I"$(CUDA_PATH)\include" /I"$(CUDA_PATH)\include\cudart" /nologo
 
 NVCCFLAGS = -m64 --ptxas-options=-v
-CUFLAGS = -DWIN64 -Xcompiler "/EHsc /W3 /nologo /Ox" $(NVCCFLAGS)
+CUFLAGS = -DWIN64 -DGWDEBUG -Xcompiler "/EHsc /W3 /nologo /Ox" $(NVCCFLAGS)
 
 ############################################################
 
@@ -51,10 +51,10 @@ clean :
 	$(CC) $(CFLAGS) /c /Tp $<
 
 tf_75bit.obj : tf_96bit.cu
-	nvcc -O2 -c $< -o $@ $(CUFLAGS) -DSHORTCUT_75BIT
+	nvcc -O3 -c $< -o $@ $(CUFLAGS) -DSHORTCUT_75BIT
 
 %.obj : %.cu
-	nvcc -O2 -c $< -o $@ $(CUFLAGS)
+	nvcc -O3 -c $< -o $@ $(CUFLAGS)
 
 ..\\%.ini : %.ini
 	$(INSTALL) $< ..

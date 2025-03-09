@@ -1,0 +1,166 @@
+# This file is part of mfaktc.
+# Copyright (c) 2025 NStorm (https://github.com/N-Storm/)
+# Copyright (C) 2009, 2010, 2011  Oliver Weihe (o.weihe@t-online.de)
+#
+# mfaktc is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# mfaktc is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mfaktc.  If not, see <http://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: Experimental build workflow
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+# Begin job "build-win"
+  build-win-experimental:
+    runs-on: ${{ matrix.sys.os }}
+#    container: mcr.microsoft.com/windows/server:ltsc2022
+
+    strategy:
+      # When fail-fast set to true, if one job fails, all others within the same
+      # matrix (i.e. Linux or Windows builds) will be aborted at the same time.
+      fail-fast: false
+
+      matrix:
+        # Available version can be viewed at the Jimver/cuda-toolkit action sources:
+        # https://github.com/Jimver/cuda-toolkit/blob/v0.2.21/src/links/windows-links.ts
+        sys:
+          - { cuda_version: '12.8.0', os: 'windows-2022' }
+          # - { cuda_version: '12.6.3', os: 'windows-2022' }
+          # - { cuda_version: '12.5.1', os: 'windows-2022' }
+          # - { cuda_version: '12.4.1', os: 'windows-2022' }
+          # - { cuda_version: '12.3.2', os: 'windows-2022' }
+          # - { cuda_version: '12.2.2', os: 'windows-2022' }
+          # - { cuda_version: '12.1.1', os: 'windows-2022' }
+          # - { cuda_version: '12.0.1', os: 'windows-2022' }
+          # - { cuda_version: '11.8.0', os: 'windows-2022' }
+          # - { cuda_version: '11.7.1', os: 'windows-2022' }
+          # - { cuda_version: '11.6.2', os: 'windows-2022' }
+          # - { cuda_version: '11.5.2', os: 'windows-2022' }
+          # - { cuda_version: '11.4.4', os: 'windows-2022' }
+          # - { cuda_version: '11.3.1', os: 'windows-2022' }
+          # - { cuda_version: '11.2.2', os: 'windows-2019' }
+          # - { cuda_version: '11.1.1', os: 'windows-2019' }
+          # - { cuda_version: '11.0.1', os: 'windows-2019' }
+          # - { cuda_version: '10.0.130', os: 'windows-2019' }
+          # - { cuda_version: '9.2.148', os: 'windows-2019' }
+          # - { cuda_version: '8.0.61', os: 'windows-2019' }
+
+    steps:
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Docker test
+        shell: bash
+        run: |
+          docker pull mcr.microsoft.com/windows/server:ltsc2022 
+          docker run --name build-container -d -v ${{ github.workspace }}:/workspace $CONTAINER pause > NUL
+
+      - name: Install build tools
+        shell: powershell
+        env:
+          SCRIPT: |
+            cd /workspace
+            wget -OutFile vs_BuildTools.exe "https://aka.ms/vs/17/release/vs_BuildTools.exe"
+            .\vs_BuildTools.exe --quiet --all --norestart
+            wget -OutFile vswhere.exe "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswhere.exe"
+            .\vswhere
+        run: docker exec build-container powershell -Command "$SCRIPT"
+
+      - name: Installing CUDA Toolkit
+        id: cuda-toolkit
+        uses: Jimver/cuda-toolkit@v0.2.21
+        with:
+          cuda: ${{ matrix.sys.cuda_version }}
+          sub-packages: ${{ startsWith(matrix.sys.cuda_version, '8.') && '[]' || '[ "nvcc", "cudart" ]' }}
+
+      - name: Show files
+        shell: powershell
+        run: |
+          dir
+          ls
+
+      - name: Show files (from CT)
+        shell: bash
+        env:
+          SCRIPT: |
+            cd /workspace
+            dir
+            ls
+        run: docker exec build-container powershell -Command "$SCRIPT"
+
+      - name: Add CUDA bin dir to PATH
+        shell: powershell
+        run: |
+          [System.Environment]::SetEnvironmentVariable('PATH', "$env:CUDA_PATH\bin;$env:PATH", 'User')
+
+      - name: Prepare sources and gather info
+        id: prepare
+        shell: bash
+        env:
+          SCRIPT: |
+            cd /workspace
+            bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
+            cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
+        run: docker exec build-container bash -c "$SCRIPT"
+
+      # MSVC 2022 installed on Windows 2022 Github Runner has PowerShell script for a Dev Shell.
+      - name: Build from sources (PowerShell with MSVC 2022)
+        if: ${{ matrix.sys.os == 'windows-2022' }}
+        shell: powershell
+        run: |
+          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
+          cd "${{ github.workspace }}\src"
+          Copy-Item mfaktc.ini ..
+          make SHELL="powershell.exe" -f Makefile.win
+
+      # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
+      # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
+      # quotes when invoked from Make.
+      # -vcvars_ver=14.0 switch enables MSVC 14.0 (2015) build environment. It's a component of MSVC 2019, not a complete MSVC instance.
+      - name: Build from sources (cmd.exe with MSVC 2019)
+        if: ${{ matrix.sys.os == 'windows-2019' }}
+        shell: cmd
+        run: |
+          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -f Makefile.win
+        env:
+          VCVARS_VER: ${{ steps.prepare.outputs.CUDA_VER_MAJOR <= 10 && '-vcvars_ver=14.0' || '' }}
+
+#      - name: Setup tmate session
+#        if: ${{ failure() }}
+#        uses: mxschmitt/action-tmate@v3
+#        with:
+#          limit-access-to-actor: true
+
+      - name: Prepare build archive with description
+        shell: bash
+        run: |
+          choco install -y --no-progress zip
+          zip -9 -j "${{ steps.prepare.outputs.BASE_NAME }}.zip" *
+          echo "[${{ steps.prepare.outputs.BASE_NAME }}.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ steps.prepare.outputs.BASE_NAME }}.zip) | \
+          ${{ matrix.sys.cuda_version }} | ${{ steps.prepare.outputs.CC_MIN }}-${{ steps.prepare.outputs.CC_MAX }} | ${{ steps.prepare.outputs.OS_VER }} | \
+          ${{ steps.prepare.outputs.COMPILER_VER }} | ${{ steps.prepare.outputs.NVCC_VER }}" > ${{ steps.prepare.outputs.BASE_NAME }}.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.prepare.outputs.BASE_NAME }}
+          path: ${{ steps.prepare.outputs.BASE_NAME }}.*
+# End job "build-win"

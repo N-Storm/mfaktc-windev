@@ -1066,6 +1066,7 @@ __global__ static void __launch_bounds__(256,6) SegSieve (uint8 *big_bit_array_d
 		if (bclr < block_size) bitOr (locsieve, bclr);
 	}
 
+        // printf("DEBUG: in SegSieve()\n");
 	// sync before copying
 	__syncthreads();
 
@@ -1337,6 +1338,12 @@ static	int	gpusieve_initialized = 0;
 		exit (1);
 	}
 	tiny_soe (mystuff->gpu_sieve_primes, primes);
+
+        // DEBUG SEED PRIMES
+        FILE *debugfp = fopen("seedprimes.dat", "a");
+        fwrite(primes, sizeof (uint32), mystuff->gpu_sieve_primes, debugfp);
+        fclose(debugfp);
+
 	mystuff->gpu_sieve_min_exp = primes[mystuff->gpu_sieve_primes - 1] + 1;
 	if(mystuff->verbosity >= 1)
 	{
@@ -1567,9 +1574,23 @@ static	int	gpusieve_initialized = 0;
 	checkCudaErrors (cudaMalloc ((void**) &mystuff->d_sieve_info, pinfo_size));
 	checkCudaErrors (cudaMemcpy (mystuff->d_sieve_info, pinfo, pinfo_size, cudaMemcpyHostToDevice));
 
+        debugfp = fopen("primes.dat", "a");
+        fwrite(primes, sizeof (uint32), mystuff->gpu_sieve_primes, debugfp);
+        fclose(debugfp);
+
+        // DEBUG
+        debugfp = fopen("pinfo.dat", "a");
+        fwrite(pinfo, pinfo_size, 1, debugfp);
+        fclose(debugfp);
+
 	// Allocate and copy the device row info, primes and modular inverses info used to calculate bit-to-clear
 	checkCudaErrors (cudaMalloc ((void**) &mystuff->d_calc_bit_to_clear_info, rowinfo_size));
 	checkCudaErrors (cudaMemcpy (mystuff->d_calc_bit_to_clear_info, rowinfo, rowinfo_size, cudaMemcpyHostToDevice));
+
+        // DEBUG
+        debugfp = fopen("rowinfo.dat", "a");
+        fwrite(rowinfo, rowinfo_size, 1, debugfp);
+        fclose(debugfp);
 
 	// Free allocated memory
 	free (primes);
@@ -1642,6 +1663,7 @@ void gpusieve (mystuff_t *mystuff, unsigned long long num_k_remaining)
 
 	// Do some sieving on the GPU!
 	SegSieve<<<(sieve_size + block_size - 1) / block_size, threadsPerBlock>>>((uint8 *)mystuff->d_bitarray, (uint8 *)mystuff->d_sieve_info, primes_per_thread);
+
 	cudaDeviceSynchronize ();
 }
 
