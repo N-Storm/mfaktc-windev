@@ -71,7 +71,7 @@ jobs:
         shell: bash
         run: |
           docker pull mcr.microsoft.com/windows/server:ltsc2022 
-          docker run --name build-container -d -v ${{ github.workspace }}:/workspace $CONTAINER pause > NUL
+          docker run --name build-container -d -v ${{ github.workspace }}:/workspace mcr.microsoft.com/windows/server:ltsc2022 pause > NUL
 
       - name: Install build tools
         shell: powershell
