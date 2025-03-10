@@ -68,11 +68,18 @@ jobs:
           fetch-tags: true
 
         # ${{ github.workspace }}
+
+      - name: Cache Docker images.
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-1
+
       - name: Docker test
         shell: bash
         run: |
           docker pull mcr.microsoft.com/windows/server:ltsc2022 
-          docker run --name build-container -d -v '.:W:/' mcr.microsoft.com/windows/server:ltsc2022 pause > NUL
+          docker run --name build-container -d mcr.microsoft.com/windows/server:ltsc2022 powershell -Command "Get-Command"
+#          docker run --name build-container -d -v '.:W:/' mcr.microsoft.com/windows/server:ltsc2022 pause > NUL
 
       - name: Install build tools
         shell: powershell

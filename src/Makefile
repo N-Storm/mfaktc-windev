@@ -5,7 +5,8 @@ CUDA_LIB = -L$(CUDA_DIR)/lib64/
 
 # compiler settings for .c files (CPU)
 CC = gcc
-CFLAGS = -Wall -Wextra -O3 -flto $(CUDA_INCLUDE) -malign-double -DGWDEBUG
+CFLAGS = -Wall -Wextra -O3 -flto $(CUDA_INCLUDE) -malign-double
+# CFLAGS += -DGWDEBUG
 CFLAGS_EXTRA_SIEVE = -funroll-all-loops
 
 # compiler settings for .cu files (GPU)

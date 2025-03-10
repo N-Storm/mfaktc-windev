@@ -310,11 +310,9 @@ a is precomputed on host ONCE.
 #endif
                         );
 
-    if (RES[1] > 1 && RES[2] > 1) {
-      static unsigned int RES_SAVED[4];
-      if (RES_SAVED[0] != RES[0]) {
-        printf("RES[0 1-3]: 0x%08X %08X%08X%08X | f: 0x%08X%08X%08X\n", RES[0], RES[1], RES[2], RES[3], RES[4], f.d2, f.d1, f.d0);
-        RES_SAVED[0] = RES[0];
+    if (RES[0] > 0 && RES[1] > 1 && RES[2] > 1) {
+      if (RES[3] == f.d0 && RES[2] == f.d1 && RES[1] == f.d2) {
+        printf("RES[0 1-3]: 0x%08X %08X%08X%08X | f: 0x%08X%08X%08X\n", RES[0], RES[1], RES[2], RES[3], f.d2, f.d1, f.d0);
       }
     }
 //    printf("===END\n");
