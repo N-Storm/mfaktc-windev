@@ -67,17 +67,18 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+        # ${{ github.workspace }}
       - name: Docker test
         shell: bash
         run: |
           docker pull mcr.microsoft.com/windows/server:ltsc2022 
-          docker run --name build-container -d -v "${{ github.workspace }}:/workspace" mcr.microsoft.com/windows/server:ltsc2022 pause > NUL
+          docker run --name build-container -d -v '.:W:/' mcr.microsoft.com/windows/server:ltsc2022 pause > NUL
 
       - name: Install build tools
         shell: powershell
         env:
           SCRIPT: |
-            cd /workspace
+            cd W:/
             wget -OutFile vs_BuildTools.exe "https://aka.ms/vs/17/release/vs_BuildTools.exe"
             .\vs_BuildTools.exe --quiet --all --norestart
             wget -OutFile vswhere.exe "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswhere.exe"
@@ -101,22 +102,24 @@ jobs:
         shell: bash
         env:
           SCRIPT: |
-            cd /workspace
+            cd W:/
             dir
             ls
         run: docker exec build-container powershell -Command "$SCRIPT"
 
       - name: Add CUDA bin dir to PATH
         shell: powershell
-        run: |
-          [System.Environment]::SetEnvironmentVariable('PATH', "$env:CUDA_PATH\bin;$env:PATH", 'User')
+        env:
+          SCRIPT: |
+            [System.Environment]::SetEnvironmentVariable('PATH', "$env:CUDA_PATH\bin;$env:PATH", 'User')
+        run: docker exec build-container powersheel -Command "$SCRIPT"
 
       - name: Prepare sources and gather info
         id: prepare
         shell: bash
         env:
           SCRIPT: |
-            cd /workspace
+            cd W:/
             bash .github/workflows/scripts/build_helper.sh ${{ matrix.sys.cuda_version }}
             cat .github/workflows/scripts/build_helper.sh.out >> $GITHUB_OUTPUT
         run: docker exec build-container bash -c "$SCRIPT"
