@@ -81,15 +81,35 @@ jobs:
           docker run --name build-container -d mcr.microsoft.com/windows/server:ltsc2022 powershell -Command "pause"
 #          docker run --name build-container -d -v '.:W:/' mcr.microsoft.com/windows/server:ltsc2022 pause > NUL
 
+      - name: Command test from container
+        shell: bash
+        run: docker exec build-container powershell -Command "dir; pwd"
+
+      - name: Command test from container 2 (bash)
+        shell: bash
+        env:
+          SCRIPT: |
+            dir;
+            pwd
+        run: docker exec build-container powershell -Command "$SCRIPT"
+
+      - name: Command test from container 3 (powershell)
+        shell: powershell
+        env:
+          SCRIPT: |
+            dir;
+            pwd
+        run: docker exec build-container powershell -Command "$Env:SCRIPT"
+
       - name: Install build tools
         shell: powershell
         env:
           SCRIPT: |
-            cd W:/
-            wget -OutFile vs_BuildTools.exe "https://aka.ms/vs/17/release/vs_BuildTools.exe"
-            .\vs_BuildTools.exe --quiet --all --norestart
-            wget -OutFile vswhere.exe "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswhere.exe"
-            .\vswhere
+            cd W:/;
+            wget -OutFile vs_BuildTools.exe "https://aka.ms/vs/17/release/vs_BuildTools.exe";
+            .\vs_BuildTools.exe --quiet --all --norestart;
+            wget -OutFile vswhere.exe "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswhere.exe";
+            .\vswhere;
         run: docker exec build-container powershell -Command "$Env:SCRIPT"
 
       - name: Installing CUDA Toolkit
