@@ -78,7 +78,7 @@ jobs:
         shell: bash
         run: |
           docker pull mcr.microsoft.com/windows/server:ltsc2022 
-          docker run --name build-container -d mcr.microsoft.com/windows/server:ltsc2022 powershell -Command "Get-Command"
+          docker run --name build-container -d mcr.microsoft.com/windows/server:ltsc2022 powershell -Command "pause"
 #          docker run --name build-container -d -v '.:W:/' mcr.microsoft.com/windows/server:ltsc2022 pause > NUL
 
       - name: Install build tools
@@ -90,7 +90,7 @@ jobs:
             .\vs_BuildTools.exe --quiet --all --norestart
             wget -OutFile vswhere.exe "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswhere.exe"
             .\vswhere
-        run: docker exec build-container powershell -Command "$SCRIPT"
+        run: docker exec build-container powershell -Command "$Env:SCRIPT"
 
       - name: Installing CUDA Toolkit
         id: cuda-toolkit
@@ -112,14 +112,14 @@ jobs:
             cd W:/
             dir
             ls
-        run: docker exec build-container powershell -Command "$SCRIPT"
+        run: docker exec build-container powershell -Command "$Env:SCRIPT"
 
       - name: Add CUDA bin dir to PATH
         shell: powershell
         env:
           SCRIPT: |
             [System.Environment]::SetEnvironmentVariable('PATH', "$env:CUDA_PATH\bin;$env:PATH", 'User')
-        run: docker exec build-container powersheel -Command "$SCRIPT"
+        run: docker exec build-container powershell -Command "$Env:SCRIPT"
 
       - name: Prepare sources and gather info
         id: prepare
@@ -135,11 +135,13 @@ jobs:
       - name: Build from sources (PowerShell with MSVC 2022)
         if: ${{ matrix.sys.os == 'windows-2022' }}
         shell: powershell
-        run: |
-          & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
-          cd "${{ github.workspace }}\src"
-          Copy-Item mfaktc.ini ..
-          make SHELL="powershell.exe" -f Makefile.win
+        env:
+          SCRIPT: |
+            & 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1' -Arch amd64 -HostArch amd64
+            cd "${{ github.workspace }}\src"
+            Copy-Item mfaktc.ini ..
+            make SHELL="powershell.exe" -f Makefile.win
+        run: docker exec build-container powershell -Command "$Env:SCRIPT"
 
       # MSVC 2019 on Windows 2019 has similar script, but it doesn't allows setting arch & host_arch and defaults to x86 (32 bit) env.
       # So we have to run bat file for the env, but Make uses PowerShell afterward because it's much better at handling long paths &
@@ -147,11 +149,10 @@ jobs:
       # -vcvars_ver=14.0 switch enables MSVC 14.0 (2015) build environment. It's a component of MSVC 2019, not a complete MSVC instance.
       - name: Build from sources (cmd.exe with MSVC 2019)
         if: ${{ matrix.sys.os == 'windows-2019' }}
-        shell: cmd
-        run: |
-          "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" x64 ${{ env.VCVARS_VER }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -f Makefile.win
         env:
-          VCVARS_VER: ${{ steps.prepare.outputs.CUDA_VER_MAJOR <= 10 && '-vcvars_ver=14.0' || '' }}
+          SCRIPT: |
+            "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat" x64 ${{ steps.prepare.outputs.CUDA_VER_MAJOR <= 10 && '-vcvars_ver=14.0' || '' }} & cd src & copy mfaktc.ini .. & make SHELL="powershell.exe" -f Makefile.win
+        run: docker exec build-container cmd /K "${{ env.SCRIPT }}"
 
 #      - name: Setup tmate session
 #        if: ${{ failure() }}

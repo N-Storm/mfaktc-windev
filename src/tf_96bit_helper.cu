@@ -266,5 +266,7 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
         RES[index * 3 + 3] = n.d0;
       }
     }
+    else
+      printf("DEBUG: res = %d | n = 0x%08X%08X%08X | nn = 0x%08X%08X%08X\n", res, n.d2, n.d1, n.d0, nn.d2, nn.d1, nn.d0);
   }
 }
