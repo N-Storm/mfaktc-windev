@@ -301,16 +301,23 @@ a is precomputed on host ONCE.
     f.d1 = __addc_cc(f_base.d1, __umul32hi(2 * k_delta * NUM_CLASSES, exp));
     f.d2 = __addc   (f_base.d2, 0);
 
-    printf("===BEG\n");
-    printf("f: 0x%08X%08X%08X\n", f.d2, f.d1, f.d0);
+//    printf("===BEG\n");
+//    printf("f: 0x%08X%08X%08X\n", f.d2, f.d1, f.d0);
 
     test_FC96_barrett76(f, b_preinit, initial_shifter_value, RES
 #ifdef DEBUG_GPU_MATH
                         , bit_max64, modbasecase_debug
 #endif
                         );
-    printf("RES: %d\n", *RES);
-    printf("===END\n");
+
+    if (RES[1] > 1 && RES[2] > 1) {
+      static unsigned int RES_SAVED[4];
+      if (RES_SAVED[0] != RES[0]) {
+        printf("RES[0 1-3]: 0x%08X %08X%08X%08X | f: 0x%08X%08X%08X\n", RES[0], RES[1], RES[2], RES[3], RES[4], f.d2, f.d1, f.d0);
+        RES_SAVED[0] = RES[0];
+      }
+    }
+//    printf("===END\n");
   }
 }
 

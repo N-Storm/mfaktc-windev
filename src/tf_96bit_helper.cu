@@ -250,7 +250,7 @@ so we compare the LSB of qi and q.d0, if they are the same (both even or both od
 #else /* Mersennes */
     nn.d0++;
     res  = __sub_cc (q.d0, nn.d0);
-//           __sub_cc (q.d0, nn.d0); /* the compiler (release 5.0, V0.2.1221) doesn't want to execute this so we need the TWO lines above... */
+//         __sub_cc (q.d0, nn.d0); /* the compiler (release 5.0, V0.2.1221) doesn't want to execute this so we need the TWO lines above... */
     res |= __subc_cc(q.d1, nn.d1);
     res |= __subc   (q.d2, nn.d2);
 

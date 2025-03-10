@@ -1340,7 +1340,7 @@ static	int	gpusieve_initialized = 0;
 	tiny_soe (mystuff->gpu_sieve_primes, primes);
 
         // DEBUG SEED PRIMES
-        FILE *debugfp = fopen("seedprimes.dat", "a");
+        FILE *debugfp = fopen("seedprimes.dat", "w");
         fwrite(primes, sizeof (uint32), mystuff->gpu_sieve_primes, debugfp);
         fclose(debugfp);
 
@@ -1574,23 +1574,19 @@ static	int	gpusieve_initialized = 0;
 	checkCudaErrors (cudaMalloc ((void**) &mystuff->d_sieve_info, pinfo_size));
 	checkCudaErrors (cudaMemcpy (mystuff->d_sieve_info, pinfo, pinfo_size, cudaMemcpyHostToDevice));
 
-        debugfp = fopen("primes.dat", "a");
-        fwrite(primes, sizeof (uint32), mystuff->gpu_sieve_primes, debugfp);
-        fclose(debugfp);
-
         // DEBUG
-        debugfp = fopen("pinfo.dat", "a");
-        fwrite(pinfo, pinfo_size, 1, debugfp);
-        fclose(debugfp);
+        // debugfp = fopen("pinfo.dat", "a");
+        // fwrite(pinfo, pinfo_size, 1, debugfp);
+        // fclose(debugfp);
 
 	// Allocate and copy the device row info, primes and modular inverses info used to calculate bit-to-clear
 	checkCudaErrors (cudaMalloc ((void**) &mystuff->d_calc_bit_to_clear_info, rowinfo_size));
 	checkCudaErrors (cudaMemcpy (mystuff->d_calc_bit_to_clear_info, rowinfo, rowinfo_size, cudaMemcpyHostToDevice));
 
         // DEBUG
-        debugfp = fopen("rowinfo.dat", "a");
-        fwrite(rowinfo, rowinfo_size, 1, debugfp);
-        fclose(debugfp);
+        // debugfp = fopen("rowinfo.dat", "a");
+        // fwrite(rowinfo, rowinfo_size, 1, debugfp);
+        // fclose(debugfp);
 
 	// Free allocated memory
 	free (primes);
